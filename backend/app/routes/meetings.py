@@ -612,7 +612,7 @@ async def request_record(
     )
 
 
-@api_router.get("/api/downloadAudio/{meeting_id}", dependencies=[DependsUser])
+@api_router.get("/api/downloadAudio/{meeting_id}")
 async def download_audio(
     meeting_id: Annotated[str, Path()],
     meeting_manager: MeetingManagerDep,

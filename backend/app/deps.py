@@ -3,6 +3,7 @@ from typing_extensions import Annotated
 from fastapi import Body, Depends, HTTPException, status, Cookie
 from fastapi.security import OAuth2PasswordBearer
 from typing import Optional
+from sqlmodel import Session
 
 from app.core.db import engine
 from app.core.user_manager import UserManager
@@ -12,7 +13,7 @@ from app.models import Meeting, User
 from app.core.sio.sio_server import SioServer
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")  # No longer needed
 
 _user_manager = UserManager(engine)
 _meeting_manager = MeetingManager(engine)
@@ -87,35 +88,29 @@ async def get_meeting_agent(
 MeetingAgentDep = Annotated[object, Depends(get_meeting_agent)]
 
 
-async def get_user_from_cookie(
-    user_manager: UserManagerDep, mytoken: Annotated[Optional[str], Cookie()] = None
-):
-    if not mytoken:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not authenticated"
-        )
-    user = user_manager.get_user_from_token(mytoken)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-        )
-    return user
+# Create a default anonymous user for the system
+# This allows the app to work without authentication
+_anonymous_user: Optional[User] = None
 
 
-async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)], user_manager: UserManagerDep
-):
-    user = user_manager.get_user_from_token(token)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+async def get_anonymous_user(user_manager: UserManagerDep) -> User:
+    """Get or create an anonymous user for unauthenticated access"""
+    global _anonymous_user
+    if _anonymous_user is None:
+        # Try to get or create a default anonymous user
+        anonymous_user = user_manager.getUserByUsername("anonymous")
+        if anonymous_user is None:
+            # Create anonymous user if it doesn't exist
+            with Session(engine) as session:
+                anonymous_user = User(username="anonymous", password="")
+                session.add(anonymous_user)
+                session.commit()
+                session.refresh(anonymous_user)
+        _anonymous_user = anonymous_user
+    return _anonymous_user
 
 
-DependsUser = Depends(get_user_from_cookie)
+DependsUser = Depends(get_anonymous_user)
 UserDep = Annotated[User, DependsUser]
 # UserDep = Depends(get_user_from_cookie)
 # UserDep = Depends(get_current_user)

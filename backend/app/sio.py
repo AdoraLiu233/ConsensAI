@@ -31,10 +31,23 @@ async def connect(sid: str, environ, auth):
         user = get_user_manager().setSid(token, sid) if token else None
     except Exception:
         pass
+    
+    # If no user from token, use anonymous user
     if not user:
-        # 断开连接
-        logger.error(f"authentication failed: sid={sid} auth={auth}")
-        raise ConnectionRefusedError("Socket.IO authentication failed")
+        user_manager = get_user_manager()
+        anonymous_user = user_manager.getUserByUsername("anonymous")
+        if anonymous_user:
+            # Map sid to anonymous user
+            user_id = str(anonymous_user.user_id)
+            user_manager.sid2userId[sid] = user_id
+            user = anonymous_user
+            logger.info(f"Using anonymous user for sid={sid}")
+    
+    if not user:
+        # Still no user - this shouldn't happen, but log and allow connection anyway
+        logger.warning(f"Could not get user for sid={sid}, allowing connection anyway")
+        return
+    
     print(f"setSid sid={sid} userId={user.user_id} username={user.username}")
 
     # 将同一个userid的sid都加入到同一个room中，方便debug查看

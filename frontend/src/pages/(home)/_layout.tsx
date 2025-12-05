@@ -1,14 +1,12 @@
-import { Outlet, redirect, useLoaderData, useMatches, useNavigate } from "react-router";
-import { AppShell, Burger, Group, ScrollArea, Stack, useMantineTheme, Badge, Code, Text, Center, Button } from '@mantine/core';
-import { useDisclosure, useMediaQuery } from '@mantine/hooks';
+import { Outlet, useLoaderData, useMatches } from "react-router";
+import { AppShell, Burger, Group, ScrollArea, Stack, useMantineTheme, Badge, Code, Text } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { useCallback, useMemo, useState } from "react";
 import { Navbar } from '@/components/NavBar/NavBar';
 import type { NavItem } from "@/lib/definitions";
-import { IconArrowsJoin2, IconHome, IconList, IconLogout, IconSquareRoundedPlus } from "@tabler/icons-react";
+import { IconArrowsJoin2, IconHome, IconList, IconSquareRoundedPlus } from "@tabler/icons-react";
 import { SideResizable } from "@/components/SideResizable/SideResizable";
 import { socket, useSocket } from "@/lib/socket";
-import { usersCheckLogin, usersLogout } from "@/client";
-import { useMeeting } from "@/hooks/useMeeting";
 import { useMeetingStore } from "@/store/meetingStore";
 import { LanguagePicker } from "@/components/LanguagePicker";
 import { useTranslation } from "react-i18next";
@@ -16,21 +14,9 @@ import { useShallow } from "zustand/react/shallow";
 
 
 export async function Loader() {
-  try {
-    // return 'changethis'; // TODO: remove this line
-    const res = await usersCheckLogin();
-    if (res.data.code === 0) {
-      socket.connect();
-      return res.data.username;
-    } else {
-      socket.disconnect();
-      return redirect('/login');
-    }
-  } catch (err) {
-    console.error(err);
-    socket.disconnect();
-    return redirect('/login');
-  }
+  // No authentication check needed - connect socket directly
+  socket.connect();
+  return "anonymous";
 }
 
 
@@ -46,8 +32,6 @@ export default function BaseLayout() {
 
   const [navbarWidth, setNavbarWidth] = useState<number>(250);
   const username = useLoaderData<typeof Loader>();
-	const navigate = useNavigate();
-  const { leaveMeeting } = useMeeting();
   const headerContent = useMeetingStore((s) => (s.headerContent));
 
   const theme = useMantineTheme();
@@ -160,30 +144,6 @@ export default function BaseLayout() {
             <Navbar data={navItems} clickHandler={closeMobile} />
           </AppShell.Section>
 
-          <AppShell.Section>
-            <Center>
-              <Button 
-                variant="subtle" color='gray'
-                fullWidth  
-                leftSection={<IconLogout />}
-                onClick={
-                  () => {
-                    socket.disconnect();
-                    leaveMeeting();  // ensure leaving meeting on logout
-                    usersLogout().then((res) => {
-                      console.log(res);
-                      if (res.data.code === 0) {
-                          navigate('/login');
-                      }
-                    }).catch((err) => {
-                      console.error(err);
-                      navigate('/login');
-                    });
-                  }
-                }
-              >{t('actionLogout')}</Button>
-            </Center>
-          </AppShell.Section>
 
         </Stack>
       </AppShell.Navbar>

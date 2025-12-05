@@ -43,7 +43,7 @@ url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 default = true
 
 [tool.dmon.tasks]
-app = { cmd = ["python3", "-u", "app/main.py"], log_rotate = true }
+app = { cmd = ["python", "-u", "app/main.py"], log_rotate = true }
 
 [tool.dmon]
 default_task = "app"
