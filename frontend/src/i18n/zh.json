@@ -81,5 +81,12 @@
     "ongoingTitle": "最近进行中的讨论",
     "discussionDetail": "研讨详情",
     "audioNotFound": "未找到音频",
-    "audioNotFoundMessage": "该研讨的音频未被记录。请以启用 PCM 保存的方式重启后端服务，以记录音频。"
+    "audioNotFoundMessage": "该研讨的音频未被记录。请以启用 PCM 保存的方式重启后端服务，以记录音频。",
+    "inspirationTitle": "💡 AI 灵感提示",
+    "aiGenerated": "AI生成",
+    "inspirationDescription": "检测到讨论静默，AI为您提供以下新视角：",
+    "noInspiration": "暂无新灵感",
+    "close": "关闭",
+    "silenceTimer": "静默计时",
+    "silenceThresholdReached": "已达到阈值"
 }

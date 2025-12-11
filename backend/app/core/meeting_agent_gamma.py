@@ -1,9 +1,11 @@
-import os
-from pathlib import Path
-from typing import Dict, List, Literal, Optional, Tuple
-from handyllm.types import PathType
 import asyncio
 import copy
+import os
+import time
+from pathlib import Path
+from typing import Dict, List, Literal, Optional, Tuple
+
+from handyllm.types import PathType
 from tenacity import retry, stop_after_attempt, RetryCallState
 
 from app.core.agent.models import Issue, Sentence
@@ -21,7 +23,7 @@ from app.core.meeting_agent import MeetingAgent
 from app.core.attendee_manager import AttendeeManager
 from app.core.parsed_issues import ParsedIssue
 from app.core.sio.sio_server import SioServer
-from app.core.sio.models import UpdateIssueData
+from app.core.sio.models import InspirationData, UpdateIssueData
 from app.types import MeetingLanguageType
 
 
@@ -69,6 +71,7 @@ class MeetingAgentGamma(MeetingAgent):
         self.text_to_issue_cnt = 0
         self.suggest_position_cnt = 0
         self.suggest_issue_cnt = 0
+        self.heuristic_cnt = 0
 
         # 用户选择的节点, 默认没有选中
         self.chosen_node: int = -1
@@ -76,6 +79,13 @@ class MeetingAgentGamma(MeetingAgent):
         # 静音触发
         self.is_mute = False  # 用户没有说话
         self.mute_generate = False  # 用户没有说话已经触发了生成issue map
+
+        # 静默灵感提示
+        self.last_speech_ts = time.monotonic()
+        self.last_inspiration_ts = 0.0
+        self.SILENCE_THRESHOLD = 60  # seconds
+        self.SILENCE_COOLDOWN = 60  # seconds
+        self.generating_inspiration = False
 
         self.auto_generate = False
         self.last_issue = None
@@ -94,6 +104,7 @@ class MeetingAgentGamma(MeetingAgent):
             self.sentences.append(sentence)
             self.logger.info(f"[sentence] {sentence=}")
             self.issue_map_queue.put_nowait(sentence)
+            self.last_speech_ts = time.monotonic()
 
     async def gamma_op_node(
         self,
@@ -495,6 +506,94 @@ class MeetingAgentGamma(MeetingAgent):
             )
             self.text_to_issue_cnt += 1
         return 1, res
+
+    def _parse_insights(self, raw: str) -> List[str]:
+        ideas: List[str] = []
+        for line in raw.splitlines():
+            text = line.strip()
+            if not text:
+                continue
+            if text.lower() == "none":
+                return []
+            if text.startswith("-"):
+                text = text[1:].strip()
+            if text:
+                ideas.append(text)
+        return ideas
+
+    async def generate_silence_inspiration(
+        self,
+        meeting_id: int,
+        sio: SioServer,
+        room: str,
+        attendee_manager: AttendeeManager,
+    ):
+        self.generating_inspiration = True
+        speaker = attendee_manager.get_speaker_map(meeting_id)
+        recent_dialog = parse_sentences_to_dialog(
+            self.sentences[-30:], speaker
+        )
+        issue_map_text = issue_map_to_str(self.parsed_issues_new.parsed_issue)
+        cache_file = (
+            Path(self.cm.base_dir, f"heuristic/heur_{self.heuristic_cnt}.txt")
+        ).resolve()
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            insights_raw = await self.cm.cache(
+                self.agent.heuristic_insights,
+                cache_file,
+            )(
+                issue_map=issue_map_text,
+                dialog=recent_dialog,
+                summary_points="",
+                cnt=self.heuristic_cnt,
+                logger=self.logger,
+                file_suffix="",
+                meeting_language=self.meeting_language,
+            )
+            ideas = self._parse_insights(insights_raw)
+            self.logger.info(f"[silence_insights] {ideas=}")
+            self.heuristic_cnt += 1
+            if ideas:
+                timestamp_ms = int(time.time() * 1000)
+                await sio.sendInspiration(
+                    room,
+                    InspirationData(
+                        ideas=ideas,
+                        trigger="silence",
+                        generated_at=timestamp_ms,
+                    ),
+                )
+        finally:
+            self.generating_inspiration = False
+
+    async def silence_watchdog(
+        self,
+        meeting_id: int,
+        sio: SioServer,
+        room: str,
+        attendee_manager: AttendeeManager,
+        meeting_manager,
+    ):
+        self.logger.info("[silence_watchdog] start")
+        while meeting_manager.isRunning(str(meeting_id)):
+            await asyncio.sleep(5)
+            now = time.monotonic()
+            if now - self.last_speech_ts < self.SILENCE_THRESHOLD:
+                continue
+            if now - self.last_inspiration_ts < self.SILENCE_COOLDOWN:
+                continue
+            # 标记触发时间，避免重复发送
+            self.last_inspiration_ts = now
+            try:
+                await self.generate_silence_inspiration(
+                    meeting_id, sio, room, attendee_manager
+                )
+            except Exception as e:
+                self.logger.warning(
+                    f"[silence_watchdog_error]: {str(e)}", exc_info=True
+                )
+        self.logger.info("[silence_watchdog] stop")
 
     def update_and_save_issue_map(self):
         """

@@ -129,6 +129,11 @@ class MeetingManager:
                     self,
                 )
             )
+            asyncio.create_task(
+                meeting_agent.silence_watchdog(
+                    meeting.meeting_id, sio, room, attendee_manager, self
+                )
+            )
         elif isinstance(meeting_agent, MeetingAgentSummary):
             print("meeting agent is summary")
             asyncio.create_task(
@@ -208,6 +213,11 @@ class MeetingManager:
                     room,
                     attendee_manager,
                     self,
+                )
+            )
+            asyncio.create_task(
+                meeting_agent.silence_watchdog(
+                    meeting.meeting_id, sio, room, attendee_manager, self
                 )
             )
         else:

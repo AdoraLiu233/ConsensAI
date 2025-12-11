@@ -4,15 +4,16 @@ from handyllm import OpenAIClient, load_from, ChatPrompt, VM, RunConfig
 from handyllm.types import PathType
 from pathlib import Path
 
-from app.core.agent.utils import (
-    extract_xml_tag,
-)
+from app.core.agent.utils import extract_xml_tag
 from app.core.agent.constants import PROMPT_ROOT_ECHOMIND, PROMPT_ROOT_AUTODOC
 from app.types import MeetingLanguageType
 
 
 prompt_position = load_from(PROMPT_ROOT_ECHOMIND / "position.hprompt", cls=ChatPrompt)
 prompt_issue = load_from(PROMPT_ROOT_ECHOMIND / "issue.hprompt", cls=ChatPrompt)
+prompt_heuristic = load_from(
+    PROMPT_ROOT_ECHOMIND / "heuristic.hprompt", cls=ChatPrompt
+)
 
 prompt_summary = load_from(PROMPT_ROOT_AUTODOC / "summary.hprompt", cls=ChatPrompt)
 
@@ -166,4 +167,46 @@ class AgentRealtime:
         result_prompt = await p_evaled.arun(client=self.client, timeout=20)
         logger.info(f"[prompt_summary_out] {cnt} {output_path=}")
         output = extract_xml_tag(result_prompt.result_str, "summary").strip()
+        return output
+
+    async def heuristic_insights(
+        self,
+        issue_map: str,
+        dialog: str,
+        summary_points: str,
+        cnt: int,
+        logger: logging.Logger,
+        file_suffix: str,
+        meeting_language: MeetingLanguageType,
+    ):
+        """
+        生成静默提示的新视角
+        """
+        output_path = (
+            Path(self.base_dir)
+            / "heuristic"
+            / f"heu_{cnt}_result{file_suffix}.hprompt"
+        ).resolve()
+        output_evaled_prompt_path = (
+            Path(self.base_dir)
+            / "heuristic"
+            / f"heu_{cnt}_eval{file_suffix}.hprompt"
+        ).resolve()
+        p_evaled = prompt_heuristic.eval(
+            var_map=VM(
+                issue_map=issue_map,
+                dialog=dialog,
+                summary_points=summary_points,
+                meeting_language=meeting_language,
+            ),
+            run_config=RunConfig(
+                output_path=output_path,
+                output_evaled_prompt_path=output_evaled_prompt_path,
+            ),
+        )
+        p_evaled.run_config.credential_path = None  # 覆盖hprompt中的credential_path
+        logger.info(f"[prompt_heuristic_in] {cnt} {output_evaled_prompt_path=}")
+        result_prompt = await p_evaled.arun(client=self.client, timeout=20)
+        logger.info(f"[prompt_heuristic_out] {cnt} {output_path=}")
+        output = extract_xml_tag(result_prompt.result_str, "insights").strip()
         return output

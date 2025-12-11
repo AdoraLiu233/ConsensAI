@@ -53,3 +53,9 @@ class SummaryData(BaseModel):
 
 class AllSummaries(BaseModel):
     summaries: List[SummaryData]
+
+
+class InspirationData(BaseModel):
+    ideas: List[str]
+    trigger: str
+    generated_at: Optional[int] = None

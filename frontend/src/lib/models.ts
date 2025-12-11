@@ -12,6 +12,11 @@ export interface SummaryData {
   id: number;
   summary: string;
 }
+export interface InspirationData {
+  ideas: string[];
+  trigger: string;
+  generated_at?: number | null;
+}
 export interface AudioChunk {
   meeting_id: string;
   file_id: number | null;

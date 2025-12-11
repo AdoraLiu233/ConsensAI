@@ -3,6 +3,7 @@ from pydantic_socketio import FastAPISocketIO
 from app.core.sio.models import (
     AllSummaries,
     Identification,
+    InspirationData,
     ProcessStatus,
     RequestData,
     UpdateIssueData,
@@ -34,3 +35,6 @@ class SioServer(FastAPISocketIO):
 
     async def sendSummaryNew(self, sid: str, data: AllSummaries):
         await self.emit("sendSummaryNew", data, to=sid)
+
+    async def sendInspiration(self, sid: str, data: InspirationData):
+        await self.emit("sendInspiration", data, to=sid)

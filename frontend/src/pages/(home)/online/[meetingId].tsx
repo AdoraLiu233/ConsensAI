@@ -16,10 +16,12 @@ import { useMeetingStore } from "@/store/meetingStore";
 import { useShallow } from "zustand/react/shallow";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { meetingsRequestTotalOptions } from "@/client/@tanstack/react-query.gen";
-import type { SendAsrData } from "@/lib/models";
+import type { SendAsrData, InspirationData } from "@/lib/models";
 import { SideResizable } from "@/components/SideResizable/SideResizable";
 import { useValueChange } from "@/hooks/useValueChange";
 import { useTranslation } from "react-i18next";
+import { SilenceTimer } from "@/components/SilenceTimer";
+import { InspirationCard } from "@/components/InspirationCard";
 
 
 export async function Loader({ params }: { params: { meetingId: string } }) {
@@ -43,6 +45,10 @@ export default function OnlineMeeting() {
     useValueChange((newInitialAsrData) => {
         setOnlineTransData(newInitialAsrData);
     }, initialAsrData);
+
+    // 静默计时器相关状态
+    const [lastSpeechTime, setLastSpeechTime] = useState<number | null>(null);
+    const [currentInspiration, setCurrentInspiration] = useState<InspirationData | null>(null);
 
     const theme = useMantineTheme();
     const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
@@ -73,7 +79,14 @@ export default function OnlineMeeting() {
             meetingHashId: initialAsrData.meeting_hash_id, // 设置会议号（hash_id）
             isHost: initialAsrData.role === "host", // 设置是否为主持人
             type: initialAsrData.ai_type, // 设置会议类型
-        })
+        });
+        // 初始化最后发言时间：如果有历史转写数据，使用当前时间（因为time_range是相对偏移量）
+        if (initialAsrData.sentences && initialAsrData.sentences.length > 0) {
+            setLastSpeechTime(Date.now());
+        } else {
+            // 如果没有历史数据，使用当前时间
+            setLastSpeechTime(Date.now());
+        }
     }, [initialAsrData, setMeeting]);
 
     // 设置页眉标题，必须用useEffect，否则卡死
@@ -158,12 +171,21 @@ export default function OnlineMeeting() {
                 ...data.speaker,
             },
         }));
+        // 更新最后发言时间：使用当前时间（因为time_range是相对偏移量）
+        if (data.sentences && data.sentences.length > 0) {
+            setLastSpeechTime(Date.now());
+        }
         if (scrollAreaRef.current) {
             scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
         }
     }, []);
 
     useSocket('sendCurrent', handleAsrResult);
+
+    useSocket('sendInspiration', useCallback((data: InspirationData) => {
+        // 显示醒目的灵感卡片
+        setCurrentInspiration(data);
+    }, []));
 
     // ---------- socket related end ----------
 
@@ -252,6 +274,12 @@ export default function OnlineMeeting() {
                                 {t('updateHotwords')}
                             </Button>
                         </Group>
+                        {/* 静默计时器 */}
+                        {meetingTypeGraph && (
+                            <Box px="xs" py="xs" style={{ borderBottom: '1px solid #e0e0e0' }}>
+                                <SilenceTimer lastSpeechTime={lastSpeechTime} threshold={60} />
+                            </Box>
+                        )}
                         <CardList trans={onlineTransData} />
                         <Recorder />
                     </Flex>
@@ -302,6 +330,14 @@ export default function OnlineMeeting() {
                     <SummaryPoints meeting_hash_id={meetingHashId} topic={title} />
                 }
             </Flex>
+
+            {/* 灵感卡片 */}
+            {meetingTypeGraph && (
+                <InspirationCard
+                    inspiration={currentInspiration}
+                    onClose={() => setCurrentInspiration(null)}
+                />
+            )}
         </Flex >
     );
 }
