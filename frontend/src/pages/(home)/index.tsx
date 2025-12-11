@@ -61,7 +61,7 @@ export default function Index() {
           <>
             {ongoingMeetings?.meetings && ongoingMeetings.meetings.length > 0 && <Text size='md' c='dimmed'>{t('ongoingTitle')}</Text>}
             <SimpleGrid cols={3} spacing="lg">
-              {ongoingMeetings?.meetings.map((meeting) => (
+              {ongoingMeetings?.meetings?.map((meeting) => (
                 <Card withBorder shadow="sm" radius="md" key={meeting.hash_id}>
                   <Text fw={500}>{meeting.topic}</Text>
                   <Text size="sm" c="dimmed">
