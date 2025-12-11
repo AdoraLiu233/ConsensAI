@@ -53,3 +53,9 @@ class SummaryData(BaseModel):
 
 class AllSummaries(BaseModel):
     summaries: List[SummaryData]
+
+
+class TextMessage(BaseModel):
+    meeting_id: str
+    content: str
+    timestamp: int

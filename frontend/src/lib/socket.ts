@@ -22,6 +22,7 @@ interface ListenEvents {
 interface EmitEvents {
   audioChunk: (d: Int16Array, meta: AudioChunkMeta) => void;
   toggleMic: (data: ToggleMicrophone) => void;
+  textMessage: (data: { meeting_id: string; content: string; timestamp: number }) => void;
 }
 
 

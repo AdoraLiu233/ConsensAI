@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from app.deps import get_user_manager, get_meeting_manager, get_attendee_manager
-from app.core.sio.models import AudioChunkMeta, ToggleMicrophone
+from app.core.sio.models import AudioChunkMeta, ToggleMicrophone, TextMessage
 from app.core.sio.sio_server import SioServer
 from app.utils import get_logger
 from app.config import settings
@@ -102,4 +102,24 @@ async def toggle_mic(sid, data: ToggleMicrophone):
         speaker_id=str(user.user_id),
         enable=data.enable,
         receive_time=receive_time,
+    )
+
+
+@sio.on("textMessage")
+async def text_message(sid, data: TextMessage):
+    """处理文本消息，直接添加到ASR结果中"""
+    # 判断是否为合法用户，不合法则直接返回
+    user = get_user_manager().findUser(sid)
+    if not user:
+        logger.warning(f"textMessage: user not found for sid={sid}")
+        return
+    
+    logger.info(f"textMessage from user {user.user_id} ({user.username}): {data.content[:50]}...")
+    
+    # 获取会议记录器并添加文本消息
+    await get_meeting_manager().add_text_message(
+        meeting_id=data.meeting_id,
+        speaker_id=str(user.user_id),
+        content=data.content,
+        timestamp=data.timestamp,
     )

@@ -25,6 +25,35 @@ app = FastAPI(
     generate_unique_id_function=custom_generate_unique_id,
 )
 
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database and create anonymous user on startup"""
+    logger.info("Initializing database...")
+    init_db()
+    
+    # Create anonymous user if it doesn't exist
+    from app.core.db import engine
+    from app.core.user_manager import UserManager
+    from app.models import User
+    from sqlmodel import Session, select
+    
+    user_manager = UserManager(engine)
+    anonymous_user = user_manager.getUserByUsername("anonymous")
+    if anonymous_user is None:
+        try:
+            with Session(engine) as session:
+                anonymous_user = User(username="anonymous", password="")
+                session.add(anonymous_user)
+                session.commit()
+                session.refresh(anonymous_user)
+                logger.info(f"Created anonymous user with id: {anonymous_user.user_id}")
+        except Exception as e:
+            logger.error(f"Failed to create anonymous user: {e}")
+    else:
+        logger.info(f"Anonymous user already exists with id: {anonymous_user.user_id}")
+
+
 # register the API router
 # this will automatically generate the OpenAPI schema and Swagger UI
 app.include_router(api_router)

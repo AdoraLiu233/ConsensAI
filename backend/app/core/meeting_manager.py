@@ -447,6 +447,14 @@ class MeetingManager:
         if meeting_recorder:
             await meeting_recorder.toggle_mic(speaker_id, enable, receive_time)
 
+    async def add_text_message(
+        self, meeting_id: str, speaker_id: str, content: str, timestamp: int
+    ):
+        """添加文本消息到会议记录中"""
+        meeting_recorder = self.meeting_recorders.get(meeting_id)
+        if meeting_recorder:
+            await meeting_recorder.add_text_message(speaker_id, content, timestamp)
+
     async def write_pcm(
         self, meeting_id: str, data: bytes, user_id: str, receive_time: datetime
     ):

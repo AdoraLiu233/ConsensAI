@@ -81,5 +81,7 @@
     "ongoingTitle": "Recent Ongoing Discussions",
     "discussionDetail": "Discussion Detail",
     "audioNotFound": "Audio not found",
-    "audioNotFoundMessage": "The audio for this discussion is not recorded. Restart your backend service with PCM saving enabled to record audio."
+    "audioNotFoundMessage": "The audio for this discussion is not recorded. Restart your backend service with PCM saving enabled to record audio.",
+    "enterMessage": "Enter your message...",
+    "send": "Send"
 }

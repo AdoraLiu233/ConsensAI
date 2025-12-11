@@ -85,7 +85,7 @@ class AgentRealtime:
         logger.info(f"[prompt_position_in] {cnt} {output_evaled_prompt_path=}")
 
         await asyncio.sleep(1)
-        result_prompt = await p_evaled.arun(client=self.client, timeout=20)
+        result_prompt = await p_evaled.arun(client=self.client, timeout=60)  # 增加到60秒
         logger.info(f"[prompt_position_out] {cnt} {output_path=}")
         output = extract_xml_tag(result_prompt.result_str, "position_and_note").strip()
         return output
@@ -131,7 +131,7 @@ class AgentRealtime:
         logger.info(f"[prompt_issue_in] {cnt} {output_evaled_prompt_path=}")
         # await asyncio.sleep(1)
         # raise ValueError(f"evaled path: {p_evaled.run_config.output_evaled_prompt_path}")
-        result_prompt = await p_evaled.arun(client=self.client, timeout=20)
+        result_prompt = await p_evaled.arun(client=self.client, timeout=60)  # 增加到60秒
         logger.info(f"[prompt_issue_out] {cnt} {output_path=}")
         output = extract_xml_tag(result_prompt.result_str, "sub_issue_list").strip()
         return output
@@ -163,7 +163,7 @@ class AgentRealtime:
         )
         p_evaled.run_config.credential_path = None  # 覆盖hprompt中的credential_path
         logger.info(f"[prompt_summary_in] {cnt} {output_evaled_prompt_path=}")
-        result_prompt = await p_evaled.arun(client=self.client, timeout=20)
+        result_prompt = await p_evaled.arun(client=self.client, timeout=60)  # 增加到60秒
         logger.info(f"[prompt_summary_out] {cnt} {output_path=}")
         output = extract_xml_tag(result_prompt.result_str, "summary").strip()
         return output

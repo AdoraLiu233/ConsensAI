@@ -11,6 +11,7 @@ from app.core.meeting_manager import MeetingManager
 from app.core.attendee_manager import AttendeeManager
 from app.models import Meeting, User
 from app.core.sio.sio_server import SioServer
+from app.utils.log import get_logger
 
 
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")  # No longer needed
@@ -97,16 +98,35 @@ async def get_anonymous_user(user_manager: UserManagerDep) -> User:
     """Get or create an anonymous user for unauthenticated access"""
     global _anonymous_user
     if _anonymous_user is None:
-        # Try to get or create a default anonymous user
-        anonymous_user = user_manager.getUserByUsername("anonymous")
-        if anonymous_user is None:
-            # Create anonymous user if it doesn't exist
-            with Session(engine) as session:
-                anonymous_user = User(username="anonymous", password="")
-                session.add(anonymous_user)
-                session.commit()
-                session.refresh(anonymous_user)
-        _anonymous_user = anonymous_user
+        try:
+            # Try to get or create a default anonymous user
+            anonymous_user = user_manager.getUserByUsername("anonymous")
+            if anonymous_user is None:
+                # Create anonymous user if it doesn't exist
+                try:
+                    with Session(engine) as session:
+                        anonymous_user = User(username="anonymous", password="")
+                        session.add(anonymous_user)
+                        session.commit()
+                        session.refresh(anonymous_user)
+                        logger = get_logger()
+                        logger.info(f"Created anonymous user with id: {anonymous_user.user_id}")
+                except Exception as e:
+                    # If creation fails, try to get again (might have been created by another request)
+                    anonymous_user = user_manager.getUserByUsername("anonymous")
+                    if anonymous_user is None:
+                        logger = get_logger()
+                        logger.error(f"Failed to create anonymous user: {e}")
+                        raise Exception(f"Failed to create anonymous user: {e}")
+            _anonymous_user = anonymous_user
+        except Exception as e:
+            # Log error and raise HTTP exception
+            logger = get_logger()
+            logger.error(f"Error getting anonymous user: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to initialize anonymous user: {str(e)}"
+            )
     return _anonymous_user
 
 

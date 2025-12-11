@@ -51,6 +51,26 @@ class MeetingRecorder:
             current_asr = copy.deepcopy(self.current_asr)
         return current_asr
 
+    async def add_text_message(self, speaker_id: str, content: str, timestamp: int):
+        """直接添加文本消息，不经过ASR处理"""
+        # 计算时间戳相对于会议开始时间的偏移量
+        receive_time = datetime.fromtimestamp(timestamp / 1000.0)
+        start_offset = int((receive_time - self.create_time).total_seconds() * 1000)
+        
+        # 创建AsrSentence，时间范围设置为消息的时间戳
+        asr_sentence = AsrSentence(
+            content=content,
+            time_range=[start_offset, start_offset + 1000],  # 假设每条消息持续1秒
+            speaker_id=speaker_id,
+        )
+        
+        async with self.current_asr_lock:
+            self.current_asr.append(asr_sentence)
+            self.current_asr.sort(key=lambda x: x.time_range[0])
+        
+        # 触发事件通知更新
+        self.trigger_event.set()
+
     async def step(self):
         # 将current_asr加入total_asr
         async with self.total_asr_lock:
