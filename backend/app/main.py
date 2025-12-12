@@ -37,8 +37,9 @@ app.add_middleware(
     CORSMiddleware,
     # cannot set allow_origins to ["*"], otherwise cookies cannot be sent
     # allow_origins=[],
-    # allow localhost for development
-    allow_origin_regex=r"http://localhost(:\d*)?",
+    # allow all HTTP origins for development (including localhost, LAN IPs, and public IPs)
+    # matches: http://任何IP或域名:可选端口
+    allow_origin_regex=r"https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -77,8 +77,20 @@ class Settings(YamlBaseSettings):
     spa_path: Optional[Path] = None
     """Path to the Single Page Application (SPA) static files."""
 
-    funasr_uri: str
+    funasr_uri: Optional[str] = None
     """URI for the FunASR service."""
+
+    qwen_asr_ws_url: Optional[str] = None
+    """WebSocket URL for Qwen ASR service."""
+
+    dashscope_api_key: Optional[str] = None
+    """API key for DashScope (Qwen ASR)."""
+
+    asr_sample_rate: int = 16000
+    """Sample rate for ASR audio processing."""
+
+    asr_enable_vad: bool = True
+    """Whether to enable Voice Activity Detection (VAD) for ASR."""
 
     save_pcm: bool = False
     """Whether to save PCM audio files. It consumes a lot of disk space."""
