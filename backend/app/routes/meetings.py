@@ -459,7 +459,7 @@ async def update_position_status(
     meeting: MeetingDepPost,
     meeting_agent: MeetingAgentDep,
     full_id: Embed_Body_Str,
-    status: Annotated[
+    new_status: Annotated[
         Optional[Literal["consensus", "controversial", "pending"]],
         Body(embed=True),
     ],
@@ -474,7 +474,7 @@ async def update_position_status(
         "status": "consensus" | "controversial" | "pending" | null
     }
     """
-    logger.info(f"user update position status: {full_id} -> {status}")
+    logger.info(f"user update position status: {full_id} -> {new_status}")
 
     if isinstance(meeting_agent, MeetingAgentGamma):
         # 检查节点是否存在
@@ -487,9 +487,9 @@ async def update_position_status(
 
         room = meeting.hash_id
         await meeting_agent.gamma_update_position_status(
-            sio=sio, room=room, full_id=str(full_id), status=status
+            sio=sio, room=room, full_id=str(full_id), status=new_status
         )
-        meeting_agent.logger.info(f"更新节点状态：{full_id} -> {status}")
+        meeting_agent.logger.info(f"更新节点状态：{full_id} -> {new_status}")
         return SuccessResponse()
     else:
         return WrongAgentResponse()
@@ -501,7 +501,7 @@ async def update_issue_status(
     meeting: MeetingDepPost,
     meeting_agent: MeetingAgentDep,
     full_id: Embed_Body_Str,
-    status: Annotated[
+    new_status: Annotated[
         Optional[Literal["consensus", "controversial", "pending"]],
         Body(embed=True),
     ],
@@ -516,7 +516,7 @@ async def update_issue_status(
         "status": "consensus" | "controversial" | "pending" | null
     }
     """
-    logger.info(f"user update issue status: {full_id} -> {status}")
+    logger.info(f"user update issue status: {full_id} -> {new_status}")
 
     if isinstance(meeting_agent, MeetingAgentGamma):
         # 检查节点是否存在
@@ -529,9 +529,9 @@ async def update_issue_status(
 
         room = meeting.hash_id
         await meeting_agent.gamma_update_issue_status(
-            sio=sio, room=room, full_id=str(full_id), status=status
+            sio=sio, room=room, full_id=str(full_id), status=new_status
         )
-        meeting_agent.logger.info(f"更新议题状态：{full_id} -> {status}")
+        meeting_agent.logger.info(f"更新议题状态：{full_id} -> {new_status}")
         return SuccessResponse()
     else:
         return WrongAgentResponse()

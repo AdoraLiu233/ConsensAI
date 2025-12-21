@@ -333,9 +333,9 @@ export type BodyMeetingsUpdateIssueStatus = {
      */
     full_id: string;
     /**
-     * Status
+     * New Status
      */
-    status: ('consensus' | 'controversial' | 'pending') | null;
+    new_status: ('consensus' | 'controversial' | 'pending') | null;
     /**
      * Meeting Id
      */
@@ -355,9 +355,9 @@ export type BodyMeetingsUpdatePositionStatus = {
      */
     full_id: string;
     /**
-     * Status
+     * New Status
      */
-    status: ('consensus' | 'controversial' | 'pending') | null;
+    new_status: ('consensus' | 'controversial' | 'pending') | null;
     /**
      * Meeting Id
      */
