@@ -16,24 +16,24 @@ export function GoalPanel() {
   }, [meetingGoal]);
 
   const updateGoal = async (goal: string) => {
-      try {
-          // Placeholder for API call
-          // await client.POST('/api/setGoal', { body: { meeting_hash_id: meetingHashId, goal } });
-          console.log('Setting goal:', goal);
-          await fetch('/api/setGoal', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${localStorage.getItem('token')}` // Assuming token is in localStorage
-              },
-              body: JSON.stringify({
-                  meeting_hash_id: meetingHashId,
-                  goal: goal
-              })
-          });
-      } catch (e) {
-          console.error(e);
-      }
+    try {
+      // Placeholder for API call
+      // await client.POST('/api/setGoal', { body: { meeting_hash_id: meetingHashId, goal } });
+      console.log('Setting goal:', goal);
+      await fetch('/api/setGoal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // Assuming token is in localStorage
+        },
+        body: JSON.stringify({
+          meeting_hash_id: meetingHashId,
+          goal: goal
+        })
+      });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleGoalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,53 +42,53 @@ export function GoalPanel() {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-        e.currentTarget.blur();
+      e.currentTarget.blur();
     }
   };
 
   const handleBlur = () => {
-     if (localGoal !== meetingGoal) {
-         setMeetingGoal(localGoal);
-         updateGoal(localGoal);
-     }
+    if (localGoal !== meetingGoal) {
+      setMeetingGoal(localGoal);
+      updateGoal(localGoal);
+    }
   };
 
   const handleToggle = (checked: boolean) => {
-      setActive(checked);
-      if (!checked) {
-          // logic when disabled
-      } else {
-          // logic when enabled
-      }
+    setActive(checked);
+    if (!checked) {
+      // logic when disabled
+    } else {
+      // logic when enabled
+    }
   };
-  
+
   // Only show if host or if there is a goal set
   if (!isHost && !meetingGoal) return null;
 
   return (
-    <Paper shadow="sm" p="sm" radius="md" withBorder className="goal-panel" style={{ 
-        position: 'absolute', 
-        top: 10, 
-        left: 10, 
-        zIndex: 90, 
-        width: 300,
-        backgroundColor: 'rgba(255, 255, 255, 0.95)'
+    <Paper shadow="sm" p="sm" radius="md" withBorder className="goal-panel" style={{
+      position: 'absolute',
+      top: 10,
+      left: 10,
+      zIndex: 90,
+      width: 300,
+      backgroundColor: 'rgba(255, 255, 255, 0.95)'
     }}>
       <Group justify="space-between" mb={active ? 5 : 0}>
-        <Text size="sm" fw={700}>🎯 {t('Goal Compass')}</Text>
+        <Text size="sm" fw={700}>🎯 {t('Goal Compass' as any)}</Text>
         {isHost && <Switch checked={active} onChange={(event) => handleToggle(event.currentTarget.checked)} size="xs" />}
       </Group>
-      
+
       <Collapse in={active}>
-         <TextInput
-            placeholder={t("What's the goal of this meeting?")}
-            value={localGoal}
-            onChange={handleGoalChange}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-            disabled={!isHost}
-            size="xs"
-            styles={{ input: { transition: 'all 0.2s' } }}
+        <TextInput
+          placeholder={t("What's the goal of this meeting?" as any)}
+          value={localGoal}
+          onChange={handleGoalChange}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          disabled={!isHost}
+          size="xs"
+          styles={{ input: { transition: 'all 0.2s' } }}
         />
       </Collapse>
     </Paper>

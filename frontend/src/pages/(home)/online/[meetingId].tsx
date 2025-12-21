@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Button, Flex, Input, Text, Box, Code, TagsInput, Group, ActionIcon, useMantineTheme, Modal } from '@mantine/core';
 import { useParams } from "react-router";
-import { IconPencil  } from '@tabler/icons-react';
+import { IconPencil } from '@tabler/icons-react';
 import { IconChevronRight, IconChevronLeft } from '@tabler/icons-react';
 import Flow from "@/components/Flow";
 import CardList from "@/components/CardList";
@@ -27,10 +27,10 @@ import { GoalIntervention } from "@/components/GoalIntervention";
 
 
 export async function Loader({ params }: { params: { meetingId: string } }) {
-  return {
-    // header: "liveDiscussion",
-    documentTitle: "liveDiscussion",
-  }
+    return {
+        // header: "liveDiscussion",
+        documentTitle: "liveDiscussion",
+    }
 }
 
 
@@ -127,7 +127,7 @@ export default function OnlineMeeting() {
                         <ActionIcon variant="subtle" style={{ margin: 5 }} onClick={() => setChangeTitle(true)}><IconPencil size={16} /></ActionIcon>
                     </Group>
                 }
-                 <Group gap={0}>
+                <Group gap={0}>
                     <Button variant="subtle" style={{ margin: 5 }} onClick={() => handleButtonClick('end')}>
                         {t('endMeeting')}
                     </Button>
@@ -135,8 +135,8 @@ export default function OnlineMeeting() {
                         {t('leaveMeeting')}
                     </Button>
                 </Group>
-                
-                
+
+
             </>
         );
     }, [isHost, meetingHashId, changeTitle, title, tempTitle, execChangeTitle, setHeaderContent, setTitle, t]);
@@ -144,16 +144,16 @@ export default function OnlineMeeting() {
     const handleButtonClick = (actionType: 'end' | 'leave') => {
         setAction(actionType);
         setIsModalOpen(true);
-      };
-    
-      const handleConfirm = () => {
+    };
+
+    const handleConfirm = () => {
         if (action === 'end') {
-          endMeeting(true);
+            endMeeting(true);
         } else if (action === 'leave') {
-          leaveMeeting(true);
+            leaveMeeting(true);
         }
         setIsModalOpen(false); // 关闭弹窗
-      };
+    };
 
     // // --------- 界面展示功能函数相关 end ---------
 
@@ -211,7 +211,7 @@ export default function OnlineMeeting() {
         setCurrentInspiration(data);
     }, []));
 
-    useSocket('updateDrift', useCallback((data: any) => {
+    useSocket('updateDrift', useCallback((data: { drift_score: number; reason: string; intervention: string }) => {
         console.log("updateDrift", data);
         setDriftInfo(data.drift_score, data.reason, data.intervention);
     }, [setDriftInfo]));
@@ -227,15 +227,15 @@ export default function OnlineMeeting() {
                 title={action === 'end' ? t('endMeeting') : t('leaveMeeting')}
             >
                 <Text>
-                {t(action === 'end' ? 'endMeetingConfirm' : 'leaveMeetingConfirm')}
+                    {t(action === 'end' ? 'endMeetingConfirm' : 'leaveMeetingConfirm')}
                 </Text>
                 <Group align="right" mt="md">
-                <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-                    {t('cancel')}
-                </Button>
-                <Button color="red" onClick={handleConfirm}>
-                    {t(action === 'end' ? 'endMeeting' : 'leaveMeeting')}
-                </Button>
+                    <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                        {t('cancel')}
+                    </Button>
+                    <Button color="red" onClick={handleConfirm}>
+                        {t(action === 'end' ? 'endMeeting' : 'leaveMeeting')}
+                    </Button>
                 </Group>
             </Modal>
             <Box
@@ -354,23 +354,23 @@ export default function OnlineMeeting() {
             <Flex direction='column' style={{ width: "100%", position: 'relative' }}>
                 {meetingTypeGraph && <GoalPanel />}
                 {meetingTypeGraph && driftScore > 70 && (
-                    <GoalIntervention 
-                        reason={driftReason} 
-                        intervention={driftIntervention} 
+                    <GoalIntervention
+                        reason={driftReason}
+                        intervention={driftIntervention}
                         onLocate={() => {
                             // Logic to locate goal node. For now, we can just log or maybe trigger a fitView on ID 1 if possible.
                             // Since Flow is a child, we might need a context or event bus.
                             // Or just ignore the locate action for this MVP step if too complex to wire up.
                             console.log("Locate goal node");
-                        }} 
-                        onClose={() => setDriftInfo(0, "", "")} 
+                        }}
+                        onClose={() => setDriftInfo(0, "", "")}
                     />
                 )}
                 {
                     meetingTypeGraph ?
-                    <Flow initialNodeData={initialAsrData.issue_map} isEditable={true} />
-                    :
-                    <SummaryPoints meeting_hash_id={meetingHashId} topic={title} />
+                        <Flow initialNodeData={initialAsrData.issue_map} isEditable={true} />
+                        :
+                        <SummaryPoints meeting_hash_id={meetingHashId} topic={title} />
                 }
             </Flex>
 
