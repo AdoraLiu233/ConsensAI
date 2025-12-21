@@ -682,7 +682,10 @@ class MeetingAgentGamma(MeetingAgent):
         while meeting_manager.isRunning(str(meeting_id)):
             await asyncio.sleep(45) # Check every 45 seconds (30-60s per requirements)
             if self.meeting_goal:
+                self.logger.info(f"[goal_check_scheduler] running check... meeting_goal={self.meeting_goal}")
                 await self.run_goal_check(meeting_id, sio, room, attendee_manager)
+            else:
+                self.logger.info("[goal_check_scheduler] no meeting goal set, skip.")
         self.logger.info("[goal_check_scheduler] stop")
 
     def update_and_save_issue_map(self):

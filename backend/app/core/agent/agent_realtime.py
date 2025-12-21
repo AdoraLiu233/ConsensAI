@@ -249,6 +249,8 @@ class AgentRealtime:
         )
         p_evaled.run_config.credential_path = None
         logger.info(f"[prompt_goal_in] {cnt} {output_evaled_prompt_path=}")
+        logger.info(f"[prompt_goal_content] currentGoal={current_goal} recentDialog={recent_dialog} currentMapContext={current_map_context}")
         result_prompt = await p_evaled.arun(client=self.client, timeout=20)
         logger.info(f"[prompt_goal_out] {cnt} {output_path=}")
+        logger.info(f"[prompt_goal_result] {result_prompt.result_str}")
         return result_prompt.result_str

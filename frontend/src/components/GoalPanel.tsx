@@ -68,7 +68,7 @@ export function GoalPanel() {
   return (
     <Paper shadow="sm" p="sm" radius="md" withBorder className="goal-panel" style={{
       position: 'absolute',
-      top: 10,
+      top: 60,
       left: 10,
       zIndex: 90,
       width: 300,
