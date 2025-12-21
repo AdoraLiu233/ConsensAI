@@ -1,10 +1,10 @@
-import { useState, type ChangeEventHandler } from 'react';
+import { useState, useEffect, type ChangeEventHandler } from 'react';
 import { type NodeProps, Position, Handle, useReactFlow } from '@xyflow/react';
-import { Button, Textarea, Popover, TextInput, ActionIcon } from '@mantine/core';
-import { IconCheck, IconMinus, IconPlus, IconX } from '@tabler/icons-react';
-import type { CustomNodeType, IssueNode } from '@/lib/definitions';
+import { Button, Textarea, Popover, TextInput, ActionIcon, Menu, Badge } from '@mantine/core';
+import { IconCheck, IconMinus, IconPlus, IconX, IconChevronDown } from '@tabler/icons-react';
+import type { CustomNodeType, IssueNode, PositionStatusType } from '@/lib/definitions';
 import { meetingsAddNode, meetingsChooseNode, meetingsDeleteNode, meetingsModifyNode } from '@/client';
-import { success } from '@/lib/notifications';
+import { success, error } from '@/lib/notifications';
 import { useMeetingStore } from '@/store/meetingStore';
 import { getChildren, newNode } from '@/lib/utils';
 import { useValueChange } from '@/hooks/useValueChange';
@@ -29,6 +29,16 @@ export function IssuePositionNode({ id, data, type }: NodeProps<CustomNodeType>)
 
   const meetingHashId = useMeetingStore(s => s.meetingHashId);
   const { updateNodeData, setNodes, getNodes, getEdges } = useReactFlow<CustomNodeType>();
+  
+  // 获取当前节点的状态（对 Issue 和 Position 节点都支持）
+  const currentStatus = (data as any).status;
+  const [localStatus, setLocalStatus] = useState<PositionStatusType | null>(currentStatus || null);
+
+  // 当 data.status 变化时，同步 localStatus
+  useEffect(() => {
+    const newStatus = (data as any).status;
+    setLocalStatus(newStatus || null);
+  }, [(data as any).status]);
 
   const shouldPopoverBeOpened = data.editable && (MouseOverNode || MouseOverPopover || MouseFocus);
   if (popoverOpened !== shouldPopoverBeOpened) {
@@ -95,6 +105,51 @@ export function IssuePositionNode({ id, data, type }: NodeProps<CustomNodeType>)
         return node;
       })
     );
+  };
+
+  const handleStatusChange = (status: PositionStatusType | null) => {
+    if (!meetingHashId) {
+      error(t('error'), t('meetingHashIdMissing') || 'Meeting hash ID is missing');
+      return;
+    }
+
+    // 根据节点类型调用不同的 API
+    const apiEndpoint = type === 'issue' ? '/api/updateIssueStatus' : '/api/updatePositionStatus';
+
+    // 调用 API 更新状态
+    fetch(apiEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        meeting_hash_id: meetingHashId,
+        full_id: id,
+        status: status,
+      }),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          // 尝试解析错误响应
+          let errorMessage = "Failed to update status";
+          try {
+            const errorData = await res.json();
+            errorMessage = errorData.detail || errorData.message || errorMessage;
+          } catch (e) {
+            errorMessage = `HTTP ${res.status}: ${res.statusText}`;
+          }
+          throw new Error(errorMessage);
+        }
+        const data = await res.json();
+        setLocalStatus(status);
+        updateNodeData(id, { status: status || undefined });
+        success(t('statusUpdateSuccess' as any) || "Status updated successfully");
+      })
+      .catch((err) => {
+        console.error("Error updating status:", err);
+        error(t('updateError'), err.message || 'Failed to update status.');
+      });
   };
 
   /**
@@ -249,8 +304,23 @@ export function IssuePositionNode({ id, data, type }: NodeProps<CustomNodeType>)
 
         <div className="flex">
           <div className="ml-2" style={{ width: '250px', color: fontColor }}>
-            <div className=" custom-drag-handle text-md font-bold " >
+            <div className=" custom-drag-handle text-md font-bold" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {'❓ ' + t('issue') + ' ' + id + (!data.confirmed ? ' 🤖' : '')}
+              {localStatus && (
+                <Badge
+                  size="xs"
+                  color={
+                    localStatus === 'consensus' ? 'green' :
+                    localStatus === 'controversial' ? 'red' :
+                    'yellow'
+                  }
+                  variant="light"
+                >
+                  {localStatus === 'consensus' ? (t('statusConsensus' as any) || '达成共识') :
+                   localStatus === 'controversial' ? (t('statusControversial' as any) || '存在分歧') :
+                   (t('statusPending' as any) || '待延展')}
+                </Badge>
+              )}
             </div>
             <div className="text-gray-800">
             {data.editable ? (
@@ -285,12 +355,46 @@ export function IssuePositionNode({ id, data, type }: NodeProps<CustomNodeType>)
                 justifyContent: 'center',
                 alignItems: 'center',
                 marginBottom: '5px',
+                gap: '4px',
               }}
             >
+              {data.editable && type === 'issue' && (
+                <Menu shadow="md" width={150}>
+                  <Menu.Target>
+                    <ActionIcon 
+                      size="xs" 
+                      variant="outline" 
+                      color={localStatus ?
+                        (localStatus === 'consensus' ? 'green' :
+                         localStatus === 'controversial' ? 'red' :
+                         'yellow') : 'gray'
+                      }
+                    >
+                      <IconChevronDown size={12} />
+                    </ActionIcon>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Item onClick={() => handleStatusChange('consensus')}>
+                      {t('statusConsensus' as any) || '达成共识'}
+                    </Menu.Item>
+                    <Menu.Item onClick={() => handleStatusChange('controversial')}>
+                      {t('statusControversial' as any) || '存在分歧'}
+                    </Menu.Item>
+                    <Menu.Item onClick={() => handleStatusChange('pending')}>
+                      {t('statusPending' as any) || '待延展'}
+                    </Menu.Item>
+                    {localStatus && (
+                      <Menu.Item onClick={() => handleStatusChange(null)} color="gray">
+                        {t('clearStatus' as any) || '清除状态'}
+                      </Menu.Item>
+                    )}
+                  </Menu.Dropdown>
+                </Menu>
+              )}
               <ActionIcon size="xs" variant="outline" onClick={handleToggleCollapse}>
                 {data.isCollapsed ? <IconPlus size={16} /> : <IconMinus size={16} />}
               </ActionIcon>
-              <ActionIcon size="xs" variant="outline" color='red' style={{ marginLeft: '8px' }} onClick={handleDelete}>
+              <ActionIcon size="xs" variant="outline" color='red' style={{ marginLeft: '4px' }} onClick={handleDelete}>
                 <IconX size={16} />
               </ActionIcon>
             </div>
@@ -392,7 +496,24 @@ export function IssuePositionNode({ id, data, type }: NodeProps<CustomNodeType>)
 
         <div className="flex">
           <div className="ml-2" style={{ width: '300px' }}>
-            <div className=" custom-drag-handle text-md font-bold">{'💡 ' + t('position') + ' ' + id + (!data.confirmed ? ' 🤖' : '')}</div>
+            <div className=" custom-drag-handle text-md font-bold" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {'💡 ' + t('position') + ' ' + id + (!data.confirmed ? ' 🤖' : '')}
+              {localStatus && (
+                <Badge
+                  size="xs"
+                  color={
+                    localStatus === 'consensus' ? 'green' :
+                    localStatus === 'controversial' ? 'red' :
+                    'yellow'
+                  }
+                  variant="light"
+                >
+                  {localStatus === 'consensus' ? (t('statusConsensus' as any) || '达成共识') :
+                   localStatus === 'controversial' ? (t('statusControversial' as any) || '存在分歧') :
+                   (t('statusPending' as any) || '待延展')}
+                </Badge>
+              )}
+            </div>
             <div className="text-gray-800">
             {data.editable ? (
                 editIndex === id ? (
@@ -425,15 +546,48 @@ export function IssuePositionNode({ id, data, type }: NodeProps<CustomNodeType>)
                 justifyContent: 'center',
                 alignItems: 'center',
                 marginBottom: '5px',
+                gap: '4px',
               }}
             >
+              {data.editable && type === 'position' && (
+                <Menu shadow="md" width={150}>
+                  <Menu.Target>
+                    <ActionIcon 
+                      size="xs" 
+                      variant="outline" 
+                      color={localStatus ?
+                        (localStatus === 'consensus' ? 'green' :
+                         localStatus === 'controversial' ? 'red' :
+                         'yellow') : 'gray'
+                      }
+                    >
+                      <IconChevronDown size={12} />
+                    </ActionIcon>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Item onClick={() => handleStatusChange('consensus')}>
+                      {t('statusConsensus' as any) || '达成共识'}
+                    </Menu.Item>
+                    <Menu.Item onClick={() => handleStatusChange('controversial')}>
+                      {t('statusControversial' as any) || '存在分歧'}
+                    </Menu.Item>
+                    <Menu.Item onClick={() => handleStatusChange('pending')}>
+                      {t('statusPending' as any) || '待延展'}
+                    </Menu.Item>
+                    {localStatus && (
+                      <Menu.Item onClick={() => handleStatusChange(null)} color="gray">
+                        {t('clearStatus' as any) || '清除状态'}
+                      </Menu.Item>
+                    )}
+                  </Menu.Dropdown>
+                </Menu>
+              )}
               <ActionIcon size="xs" variant="outline" onClick={handleToggleCollapse}>
                 {data.isCollapsed ? <IconPlus size={16} /> : <IconMinus size={16} />}
               </ActionIcon>
-              <ActionIcon size="xs" variant="outline" color='red' style={{ marginLeft: '8px' }} onClick={handleDelete}>
+              <ActionIcon size="xs" variant="outline" color='red' style={{ marginLeft: '4px' }} onClick={handleDelete}>
                 <IconX size={16} />
               </ActionIcon>
-
             </div>
           </div>
         </div>

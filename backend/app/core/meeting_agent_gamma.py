@@ -706,6 +706,38 @@ class MeetingAgentGamma(MeetingAgent):
         self.logger.info(f"[issue_map] {output_path=}")
         self.issue_map_cnt += 1
 
+    async def gamma_update_position_status(
+        self,
+        sio: SioServer,
+        room: str,
+        full_id: str,
+        status: Optional[Literal["consensus", "controversial", "pending"]],
+    ):
+        """
+        更新 Position 节点的状态
+        """
+        self.logger.info(f"[update_position_status] {full_id=} {status=}")
+        self.parsed_issues_new.update_position_status(full_id, status)
+        # update issue map
+        self.update_and_save_issue_map()
+        await self.gamma_send_issue_map(sio, room)
+
+    async def gamma_update_issue_status(
+        self,
+        sio: SioServer,
+        room: str,
+        full_id: str,
+        status: Optional[Literal["consensus", "controversial", "pending"]],
+    ):
+        """
+        更新 Issue 节点的状态
+        """
+        self.logger.info(f"[update_issue_status] {full_id=} {status=}")
+        self.parsed_issues_new.update_issue_status(full_id, status)
+        # update issue map
+        self.update_and_save_issue_map()
+        await self.gamma_send_issue_map(sio, room)
+
     async def gamma_send_issue_map(self, sio: SioServer, room: str):
         """
         发送issue map

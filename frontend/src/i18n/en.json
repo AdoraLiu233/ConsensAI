@@ -88,5 +88,17 @@
     "noInspiration": "No new inspiration",
     "close": "Close",
     "silenceTimer": "Silence Timer",
-    "silenceThresholdReached": "Threshold Reached"
+    "silenceThresholdReached": "Threshold Reached",
+    "statusConsensus": "Consensus",
+    "statusControversial": "Controversial",
+    "statusPending": "Pending",
+    "clearStatus": "Clear Status",
+    "statusUpdateSuccess": "Status updated successfully",
+    "updateError": "Update failed",
+    "error": "Error",
+    "meetingHashIdMissing": "Meeting hash ID is missing",
+    "controversialItemsLibrary": "Controversial Items Library",
+    "refresh": "Refresh",
+    "loading": "Loading...",
+    "noControversialItems": "No controversial issues or positions"
 }

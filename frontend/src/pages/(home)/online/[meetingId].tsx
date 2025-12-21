@@ -24,6 +24,7 @@ import { SilenceTimer } from "@/components/SilenceTimer";
 import { InspirationCard } from "@/components/InspirationCard";
 import { GoalPanel } from "@/components/GoalPanel";
 import { GoalIntervention } from "@/components/GoalIntervention";
+import { ControversialItemsPanel } from "@/components/ControversialItemsPanel";
 
 
 export async function Loader({ params }: { params: { meetingId: string } }) {
@@ -39,13 +40,28 @@ export default function OnlineMeeting() {
     const params = useParams();
     const { data: initialAsrData } = useSuspenseQuery(meetingsRequestTotalOptions({ body: { meeting_id: params.meetingId } }))
 
+    // 转换 TotalData 为 SendAsrData，补充缺失的字段
+    const convertToSendAsrData = (data: typeof initialAsrData): SendAsrData => {
+        return {
+            speaker: data.speaker,
+            sentences: data.sentences.map((sentence, index) => ({
+                id: (sentence as any).id || `sentence-${index}`,
+                content: sentence.content,
+                time_range: sentence.time_range,
+                speaker_id: sentence.speaker_id,
+                is_final: (sentence as any).is_final ?? true,
+            })),
+        };
+    };
+
     const [changeTitle, setChangeTitle] = useState<boolean>(false); // 是否正在修改标题
     const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);//左侧边栏缩放
+    const [controversialPanelOpened, setControversialPanelOpened] = useState(false); // 问题库面板是否打开
     // 渲染从Loader获取的初始转写数据
-    const [onlineTransData, setOnlineTransData] = useState<SendAsrData>(initialAsrData);  //实时转写数据
+    const [onlineTransData, setOnlineTransData] = useState<SendAsrData>(convertToSendAsrData(initialAsrData));  //实时转写数据
     // 监听 initialAsrData 变化，同步 onlineTransData
     useValueChange((newInitialAsrData) => {
-        setOnlineTransData(newInitialAsrData);
+        setOnlineTransData(convertToSendAsrData(newInitialAsrData));
     }, initialAsrData);
 
     // 静默计时器相关状态
@@ -366,6 +382,19 @@ export default function OnlineMeeting() {
                         onClose={() => setDriftInfo(0, "", "")}
                     />
                 )}
+                {meetingTypeGraph && (
+                    <Group px="md" py="xs" style={{ borderBottom: '1px solid #e0e0e0', backgroundColor: '#f8f9fa' }}>
+                        <Button 
+                            variant={controversialPanelOpened ? "filled" : "light"}
+                            color="red" 
+                            size="sm"
+                            leftSection={<span>📋</span>}
+                            onClick={() => setControversialPanelOpened(!controversialPanelOpened)}
+                        >
+                            {t('controversialItemsLibrary' as any) || '问题库'}
+                        </Button>
+                    </Group>
+                )}
                 {
                     meetingTypeGraph ?
                         <Flow initialNodeData={initialAsrData.issue_map} isEditable={true} />
@@ -379,6 +408,14 @@ export default function OnlineMeeting() {
                 <InspirationCard
                     inspiration={currentInspiration}
                     onClose={() => setCurrentInspiration(null)}
+                />
+            )}
+
+            {/* 问题库面板 */}
+            {meetingTypeGraph && (
+                <ControversialItemsPanel
+                    opened={controversialPanelOpened}
+                    onClose={() => setControversialPanelOpened(false)}
                 />
             )}
         </Flex >

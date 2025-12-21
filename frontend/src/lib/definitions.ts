@@ -9,6 +9,8 @@ export interface NavItem {
 }
 
 
+export type PositionStatusType = 'consensus' | 'controversial' | 'pending';
+
 export type CustomNodeData = {
 	isCollapsed: boolean;
 	content: string;
@@ -19,9 +21,12 @@ export type CustomNodeData = {
 
 type IssueNodeData = CustomNodeData & {
 	chosen: boolean;
+	status?: PositionStatusType;
 }
 
-type PositionNodeData = CustomNodeData;
+type PositionNodeData = CustomNodeData & {
+	status?: PositionStatusType;
+}
 
 export type IssueNode = Node<IssueNodeData, 'issue'>;
 export type PositionNode = Node<PositionNodeData, 'position'>;

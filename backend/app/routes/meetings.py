@@ -26,6 +26,7 @@ from app.deps import (
 from app.core.asr.models import AsrSentence, TotalData
 from app.core.meeting_agent_gamma import MeetingAgentGamma
 from app.core.meeting_agent_summary import MeetingAgentSummary
+from app.core.agent.models import Issue, Position
 from app.models import (
     AddNodeResponse,
     Code,
@@ -448,6 +449,127 @@ async def add_node(
         if full_id == "0":
             return InvalidNodeResponse()
         return AddNodeResponse(full_id=full_id)
+    else:
+        return WrongAgentResponse()
+
+
+# 用户更新 Position 节点的状态
+@api_router.post("/api/updatePositionStatus")
+async def update_position_status(
+    meeting: MeetingDepPost,
+    meeting_agent: MeetingAgentDep,
+    full_id: Embed_Body_Str,
+    status: Annotated[
+        Optional[Literal["consensus", "controversial", "pending"]],
+        Body(embed=True),
+    ],
+    sio: SioDep,
+) -> Union[SuccessResponse, WrongAgentResponse]:
+    """
+    更新 Position 节点的状态
+    前端->后端：
+    {
+        "meeting_hash_id": str,
+        "full_id": str,
+        "status": "consensus" | "controversial" | "pending" | null
+    }
+    """
+    logger.info(f"user update position status: {full_id} -> {status}")
+
+    if isinstance(meeting_agent, MeetingAgentGamma):
+        # 检查节点是否存在
+        position = meeting_agent.parsed_issues_new.get_position_by_full_id(str(full_id))
+        if not position:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Position with full_id {full_id} not found"
+            )
+        
+        room = meeting.hash_id
+        await meeting_agent.gamma_update_position_status(
+            sio=sio, room=room, full_id=str(full_id), status=status
+        )
+        meeting_agent.logger.info(f"更新节点状态：{full_id} -> {status}")
+        return SuccessResponse()
+    else:
+        return WrongAgentResponse()
+
+
+# 用户更新 Issue 节点的状态
+@api_router.post("/api/updateIssueStatus")
+async def update_issue_status(
+    meeting: MeetingDepPost,
+    meeting_agent: MeetingAgentDep,
+    full_id: Embed_Body_Str,
+    status: Annotated[
+        Optional[Literal["consensus", "controversial", "pending"]],
+        Body(embed=True),
+    ],
+    sio: SioDep,
+) -> Union[SuccessResponse, WrongAgentResponse]:
+    """
+    更新 Issue 节点的状态
+    前端->后端：
+    {
+        "meeting_hash_id": str,
+        "full_id": str,
+        "status": "consensus" | "controversial" | "pending" | null
+    }
+    """
+    logger.info(f"user update issue status: {full_id} -> {status}")
+
+    if isinstance(meeting_agent, MeetingAgentGamma):
+        # 检查节点是否存在
+        issue = meeting_agent.parsed_issues_new.get_issue_by_full_id(str(full_id))
+        if not issue:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Issue with full_id {full_id} not found"
+            )
+        
+        room = meeting.hash_id
+        await meeting_agent.gamma_update_issue_status(
+            sio=sio, room=room, full_id=str(full_id), status=status
+        )
+        meeting_agent.logger.info(f"更新议题状态：{full_id} -> {status}")
+        return SuccessResponse()
+    else:
+        return WrongAgentResponse()
+
+
+# 获取问题库（所有状态为"存在分歧"的议题和观点）
+@api_router.post("/api/getControversialItems")
+async def get_controversial_items(
+    meeting: MeetingDepPost,
+    meeting_agent: MeetingAgentDep,
+) -> Union[dict, WrongAgentResponse]:
+    """
+    获取所有状态为"存在分歧"的议题和观点
+    返回：
+    {
+        "items": [
+            {
+                "type": "issue" | "position",
+                "full_id": str,
+                "content": str,
+                ...
+            }
+        ]
+    }
+    """
+    logger.info("user get controversial items")
+
+    if isinstance(meeting_agent, MeetingAgentGamma):
+        items = meeting_agent.parsed_issues_new.get_controversial_items()
+        return {
+            "items": [
+                {
+                    "type": "issue" if isinstance(item, Issue) else "position",
+                    **item.model_dump()
+                }
+                for item in items
+            ]
+        }
     else:
         return WrongAgentResponse()
 

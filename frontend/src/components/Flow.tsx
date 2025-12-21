@@ -48,7 +48,11 @@ const addPositionNode = (nodes: CustomNodeType[], edges: Edge[], positionNode: P
     // 修改观点节点的内容
     new_nodes = nodes.map(node => (
       node.id === positionNodeId ? newNode(node, { 
-        data: { content: positionNode.content, confirmed: positionNode.type === "confirmed" ? true : false } 
+        data: { 
+          content: positionNode.content, 
+          confirmed: positionNode.type === "confirmed" ? true : false,
+          status: (positionNode as any).status || undefined
+        } 
       }) : node
     ));
   } else {
@@ -63,6 +67,7 @@ const addPositionNode = (nodes: CustomNodeType[], edges: Edge[], positionNode: P
         confirmed: positionNode.type === "confirmed" ? true : false,
         editable: isEditable,
         deletable: true,  // position都可删除
+        status: (positionNode as any).status || undefined,
       },
       ...nodeDefaults,
     }];
@@ -91,7 +96,7 @@ const addIssueNode = (nodes: CustomNodeType[], edges: Edge[], issueNode: IssueDa
     new_nodes = nodes.map(node => {
       if (node.id === issueNodeId) {
         assertIssueNode(node);
-        return { ...node, data: { ...node.data, content: issueNode.content, confirmed: issueNode.type === "confirmed" ? true : false, chosen: chosen_id === issueNodeId ? true : false } };
+        return { ...node, data: { ...node.data, content: issueNode.content, confirmed: issueNode.type === "confirmed" ? true : false, chosen: chosen_id === issueNodeId ? true : false, status: (issueNode as any).status || undefined } };
       }
       return node;
     });
@@ -108,6 +113,7 @@ const addIssueNode = (nodes: CustomNodeType[], edges: Edge[], issueNode: IssueDa
         confirmed: issueNode.type === "confirmed" ? true : false,
         editable: isEditable,
         deletable: issueNode.source ? true : false,  // 根节点不可删除
+        status: (issueNode as any).status || undefined,
       },
       ...nodeDefaults,
     }];

@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional, Tuple
+from typing import List, Literal, Optional, Tuple, Union
 from pydantic import BaseModel
 from app.core.utils_echo import judge_node_type_by_full_id
 from app.core.agent.models import Issue, Relation, Position
@@ -25,9 +25,61 @@ class ParsedIssue(BaseModel):
         return result
 
     def get_position_by_full_id(self, full_id: str) -> Optional[Position]:
-        father_issue_id = int(full_id.split(".")[0])
-        position_id = int(full_id.split(".")[1])
-        return self.parsed_issue[father_issue_id - 1].positions[position_id - 1]
+        try:
+            parts = full_id.split(".")
+            if len(parts) != 2:
+                return None
+            father_issue_id = int(parts[0])
+            position_id = int(parts[1])
+            if 1 <= father_issue_id <= len(self.parsed_issue):
+                issue = self.parsed_issue[father_issue_id - 1]
+                if 1 <= position_id <= len(issue.positions):
+                    return issue.positions[position_id - 1]
+            return None
+        except (ValueError, IndexError):
+            return None
+
+    def get_issue_by_full_id(self, full_id: str) -> Optional[Issue]:
+        try:
+            issue_id = int(full_id)
+            if 1 <= issue_id <= len(self.parsed_issue):
+                return self.parsed_issue[issue_id - 1]
+            return None
+        except (ValueError, IndexError):
+            return None
+
+    def update_position_status(self, full_id: str, status: Optional[Literal["consensus", "controversial", "pending"]]) -> bool:
+        """
+        更新 Position 节点的状态
+        """
+        position = self.get_position_by_full_id(full_id)
+        if position:
+            position.status = status
+            return True
+        return False
+
+    def update_issue_status(self, full_id: str, status: Optional[Literal["consensus", "controversial", "pending"]]) -> bool:
+        """
+        更新 Issue 节点的状态
+        """
+        issue = self.get_issue_by_full_id(full_id)
+        if issue:
+            issue.status = status
+            return True
+        return False
+
+    def get_controversial_items(self) -> List[Union[Issue, Position]]:
+        """
+        获取所有状态为"存在分歧"的议题和观点
+        """
+        result: List[Union[Issue, Position]] = []
+        for issue in self.parsed_issue:
+            if issue.type != "deleted" and issue.status == "controversial":
+                result.append(issue)
+            for position in issue.positions:
+                if position.type != "deleted" and position.status == "controversial":
+                    result.append(position)
+        return result
 
     def get_issue_map_dict(self):
         # res_dict = {}
