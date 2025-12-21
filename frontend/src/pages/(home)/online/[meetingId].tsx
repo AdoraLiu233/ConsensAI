@@ -23,7 +23,6 @@ import { useTranslation } from "react-i18next";
 import { SilenceTimer } from "@/components/SilenceTimer";
 import { InspirationCard } from "@/components/InspirationCard";
 import { GoalPanel } from "@/components/GoalPanel";
-import { GoalIntervention } from "@/components/GoalIntervention";
 import { ControversialItemsPanel } from "@/components/ControversialItemsPanel";
 
 
@@ -83,8 +82,8 @@ export default function OnlineMeeting() {
         leaveMeeting, endMeeting, changeTitle: execChangeTitle,
     } = useMeeting();
 
-    const [setMeeting, meetingHashId, title, hotWords, isHost, meetingType, setHeaderContent, driftScore, driftReason, driftIntervention, setDriftInfo] = useMeetingStore(
-        useShallow((s) => [s.setMeeting, s.meetingHashId, s.topic, s.hotwords, s.isHost, s.type, s.setHeaderContent, s.driftScore, s.driftReason, s.driftIntervention, s.setDriftInfo])
+    const [setMeeting, meetingHashId, title, hotWords, isHost, meetingType, setHeaderContent, driftScore, driftReason, setDriftInfo] = useMeetingStore(
+        useShallow((s) => [s.setMeeting, s.meetingHashId, s.topic, s.hotwords, s.isHost, s.type, s.setHeaderContent, s.driftScore, s.driftReason, s.setDriftInfo])
     );
     const meetingTypeGraph = (meetingType === 'graph');
     const setTitle = useCallback((title: string) => setMeeting({ topic: title }), [setMeeting]);
@@ -369,18 +368,31 @@ export default function OnlineMeeting() {
             {/* 导图/文档 */}
             <Flex direction='column' style={{ width: "100%", position: 'relative' }}>
                 {meetingTypeGraph && <GoalPanel />}
+                {/* 偏题提示改为背景色变化和下方相关度显示，这里只保留严重偏题时的简单文字提示在顶部 */}
                 {meetingTypeGraph && driftScore > 70 && (
-                    <GoalIntervention
-                        reason={driftReason}
-                        intervention={driftIntervention}
-                        onLocate={() => {
-                            // Logic to locate goal node. For now, we can just log or maybe trigger a fitView on ID 1 if possible.
-                            // Since Flow is a child, we might need a context or event bus.
-                            // Or just ignore the locate action for this MVP step if too complex to wire up.
-                            console.log("Locate goal node");
-                        }}
-                        onClose={() => setDriftInfo(0, "", "")}
-                    />
+                     <div style={{
+                         position: 'absolute',
+                         top: '10px',
+                         left: '50%',
+                         transform: 'translateX(-50%)',
+                         zIndex: 10,
+                         backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                         padding: '8px 16px',
+                         borderRadius: '20px',
+                         border: '1px solid #ffc9c9',
+                         color: '#e03131',
+                         fontWeight: 500,
+                         pointerEvents: 'none',
+                         boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                         transition: 'opacity 0.5s ease',
+                         display: 'flex',
+                         alignItems: 'center',
+                         gap: '8px',
+                         maxWidth: '80%'
+                     }}>
+                         <span>⚠️</span>
+                         <span>{t('Goal Drift Warning' as any)}: {driftReason}</span>
+                     </div>
                 )}
                 {meetingTypeGraph && (
                     <Group px="md" py="xs" style={{ borderBottom: '1px solid #e0e0e0', backgroundColor: '#f8f9fa' }}>
