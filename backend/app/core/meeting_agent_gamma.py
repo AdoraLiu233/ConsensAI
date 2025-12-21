@@ -534,9 +534,7 @@ class MeetingAgentGamma(MeetingAgent):
     ):
         self.generating_inspiration = True
         speaker = attendee_manager.get_speaker_map(meeting_id)
-        recent_dialog = parse_sentences_to_dialog(
-            self.sentences[-30:], speaker
-        )
+        recent_dialog = parse_sentences_to_dialog(self.sentences[-30:], speaker)
         issue_map_text = issue_map_to_str(self.parsed_issues_new.parsed_issue)
         cache_file = (
             Path(self.cm.base_dir, f"heuristic/heur_{self.heuristic_cnt}.txt")
@@ -618,17 +616,19 @@ class MeetingAgentGamma(MeetingAgent):
         # Using simple heuristic: last 20 sentences
         recent_sentences = self.sentences[-20:]
         recent_dialog = parse_sentences_to_dialog(recent_sentences, speaker)
-        
+
         # Get current map context (core issues)
-        # Just dumping the map might be too large. 
+        # Just dumping the map might be too large.
         # Using issue titles and direct children.
-        current_map_context = issue_map_to_str(self.parsed_issues_new.parsed_issue) # Using full map for now as it's stringified
-        
+        current_map_context = issue_map_to_str(
+            self.parsed_issues_new.parsed_issue
+        )  # Using full map for now as it's stringified
+
         cache_file = (
             Path(self.cm.base_dir, f"goal_alignment/goal_{self.goal_alignment_cnt}.txt")
         ).resolve()
         cache_file.parent.mkdir(parents=True, exist_ok=True)
-        
+
         try:
             result_raw = await self.cm.cache(
                 self.agent.check_goal_alignment,
@@ -641,30 +641,32 @@ class MeetingAgentGamma(MeetingAgent):
                 logger=self.logger,
                 file_suffix="",
             )
-            
+
             # Parse JSON from result_raw (LLM might wrap in ```json ... ```)
             import json
             import re
-            
+
             json_str = result_raw
             match = re.search(r"```json\s*(.*?)\s*```", result_raw, re.DOTALL)
             if match:
                 json_str = match.group(1)
             else:
-                 match = re.search(r"\{.*\}", result_raw, re.DOTALL)
-                 if match:
-                     json_str = match.group(0)
+                match = re.search(r"\{.*\}", result_raw, re.DOTALL)
+                if match:
+                    json_str = match.group(0)
 
             try:
                 data = json.loads(json_str)
                 self.logger.info(f"[goal_check_result] {data=}")
-                
+
                 # Send to frontend
                 await sio.emit("updateDrift", data, room=room)
-                
+
             except json.JSONDecodeError:
-                self.logger.error(f"[goal_check_error] Failed to decode JSON: {json_str}")
-                
+                self.logger.error(
+                    f"[goal_check_error] Failed to decode JSON: {json_str}"
+                )
+
             self.goal_alignment_cnt += 1
 
         except Exception as e:
@@ -680,9 +682,11 @@ class MeetingAgentGamma(MeetingAgent):
     ):
         self.logger.info("[goal_check_scheduler] start")
         while meeting_manager.isRunning(str(meeting_id)):
-            await asyncio.sleep(45) # Check every 45 seconds (30-60s per requirements)
+            await asyncio.sleep(45)  # Check every 45 seconds (30-60s per requirements)
             if self.meeting_goal:
-                self.logger.info(f"[goal_check_scheduler] running check... meeting_goal={self.meeting_goal}")
+                self.logger.info(
+                    f"[goal_check_scheduler] running check... meeting_goal={self.meeting_goal}"
+                )
                 await self.run_goal_check(meeting_id, sio, room, attendee_manager)
             else:
                 self.logger.info("[goal_check_scheduler] no meeting goal set, skip.")

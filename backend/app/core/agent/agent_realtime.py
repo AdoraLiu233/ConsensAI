@@ -11,9 +11,7 @@ from app.types import MeetingLanguageType
 
 prompt_position = load_from(PROMPT_ROOT_ECHOMIND / "position.hprompt", cls=ChatPrompt)
 prompt_issue = load_from(PROMPT_ROOT_ECHOMIND / "issue.hprompt", cls=ChatPrompt)
-prompt_heuristic = load_from(
-    PROMPT_ROOT_ECHOMIND / "heuristic.hprompt", cls=ChatPrompt
-)
+prompt_heuristic = load_from(PROMPT_ROOT_ECHOMIND / "heuristic.hprompt", cls=ChatPrompt)
 prompt_goal_alignment = load_from(
     PROMPT_ROOT_ECHOMIND / "goal_alignment.hprompt", cls=ChatPrompt
 )
@@ -186,14 +184,10 @@ class AgentRealtime:
         生成静默提示的新视角
         """
         output_path = (
-            Path(self.base_dir)
-            / "heuristic"
-            / f"heu_{cnt}_result{file_suffix}.hprompt"
+            Path(self.base_dir) / "heuristic" / f"heu_{cnt}_result{file_suffix}.hprompt"
         ).resolve()
         output_evaled_prompt_path = (
-            Path(self.base_dir)
-            / "heuristic"
-            / f"heu_{cnt}_eval{file_suffix}.hprompt"
+            Path(self.base_dir) / "heuristic" / f"heu_{cnt}_eval{file_suffix}.hprompt"
         ).resolve()
         p_evaled = prompt_heuristic.eval(
             var_map=VM(
@@ -249,7 +243,9 @@ class AgentRealtime:
         )
         p_evaled.run_config.credential_path = None
         logger.info(f"[prompt_goal_in] {cnt} {output_evaled_prompt_path=}")
-        logger.info(f"[prompt_goal_content] currentGoal={current_goal} recentDialog={recent_dialog} currentMapContext={current_map_context}")
+        logger.info(
+            f"[prompt_goal_content] currentGoal={current_goal} recentDialog={recent_dialog} currentMapContext={current_map_context}"
+        )
         result_prompt = await p_evaled.arun(client=self.client, timeout=20)
         logger.info(f"[prompt_goal_out] {cnt} {output_path=}")
         logger.info(f"[prompt_goal_result] {result_prompt.result_str}")

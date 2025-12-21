@@ -12,11 +12,6 @@ export interface SummaryData {
   id: number;
   summary: string;
 }
-export interface InspirationData {
-  ideas: string[];
-  trigger: string;
-  generated_at?: number | null;
-}
 export interface AudioChunk {
   meeting_id: string;
   file_id: number | null;
@@ -33,6 +28,11 @@ export interface AudioChunkMeta {
 }
 export interface Identification {
   role: "host" | "participant";
+}
+export interface InspirationData {
+  ideas: string[];
+  trigger: string;
+  generated_at?: number | null;
 }
 export interface Issue {
   full_id: string;
@@ -82,11 +82,11 @@ export interface SendAsrData {
   sentences: AsrSentence[];
 }
 export interface AsrSentence {
-  id: string;
+  id?: string;
   content: string;
   time_range: number[];
   speaker_id: string;
-  is_final: boolean;
+  is_final?: boolean;
   [k: string]: unknown;
 }
 export interface ToggleMicrophone {
