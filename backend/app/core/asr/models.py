@@ -1,14 +1,17 @@
 from typing import Dict, List
-from pydantic import BaseModel
+import uuid
+from pydantic import BaseModel, Field
 
 from app.core.agent.models import Issue
 from app.types import AiType, RoleType
 
 
 class AsrSentence(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     content: str
     time_range: List[int]
     speaker_id: str
+    is_final: bool = True
 
 
 class SendAsrData(BaseModel):

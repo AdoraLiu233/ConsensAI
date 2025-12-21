@@ -82,9 +82,11 @@ export interface SendAsrData {
   sentences: AsrSentence[];
 }
 export interface AsrSentence {
+  id: string;
   content: string;
   time_range: number[];
   speaker_id: string;
+  is_final: boolean;
   [k: string]: unknown;
 }
 export interface ToggleMicrophone {

@@ -386,10 +386,14 @@ class MeetingManager:
             data = SendAsrData(speaker=speaker, sentences=result)
             await sio.sendCurrent(room, data)  # 向所有room内客户端广播
             await meeting_recorder.step()  # 将current_asr加入total_asr
-            await meeting_agent.proc_asr_results(data.sentences, sio, room)
+            
+            # Only process FINAL sentences for agent to avoid duplicates
+            final_sentences = [s for s in result if s.is_final]
+            if final_sentences:
+                await meeting_agent.proc_asr_results(final_sentences, sio, room)
         logger_mid.info("[loop.exit] cycle_request_data")
         # 关闭 funasr clients（会等待剩余asr结果）
-        await meeting_recorder.close_funasr_clients()
+        await meeting_recorder.close_asr_tasks()
         await meeting_recorder.step()  # 将current_asr加入total_asr
 
         # 记录所有的asr结果到文件

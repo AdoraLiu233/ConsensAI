@@ -163,16 +163,38 @@ export default function OnlineMeeting() {
 
     // 正确排序：必须先展示全部转写数据，再展示后来收到的每一小份update
     const handleAsrResult = useCallback((data: SendAsrData) => {
-        console.log(data);
-        // 显示在列表的最后端
-        setOnlineTransData((prevData) => ({
-            ...prevData,
-            sentences: [...prevData.sentences, ...data.sentences],
-            speaker: {
-                ...prevData.speaker,
-                ...data.speaker,
-            },
-        }));
+        // console.log(data);
+        // 显示在列表的最后端，如果是同一个id则覆盖
+        setOnlineTransData((prevData) => {
+            const newSentences = [...prevData.sentences];
+            for (const s of data.sentences) {
+                // 如果后端传来id，则尝试去重更新
+                if (s.id) {
+                    let found = false;
+                    for (let i = newSentences.length - 1; i >= 0; i--) {
+                        if (newSentences[i].id === s.id) {
+                            newSentences[i] = s;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        newSentences.push(s);
+                    }
+                } else {
+                    // 兼容旧数据（无id），直接添加
+                    newSentences.push(s);
+                }
+            }
+            return {
+                ...prevData,
+                sentences: newSentences,
+                speaker: {
+                    ...prevData.speaker,
+                    ...data.speaker,
+                },
+            };
+        });
         // 更新最后发言时间：使用当前时间（因为time_range是相对偏移量）
         if (data.sentences && data.sentences.length > 0) {
             setLastSpeechTime(Date.now());
