@@ -82,8 +82,8 @@ export default function OnlineMeeting() {
         leaveMeeting, endMeeting, changeTitle: execChangeTitle,
     } = useMeeting();
 
-    const [setMeeting, meetingHashId, title, hotWords, isHost, meetingType, setHeaderContent, driftScore, driftReason, setDriftInfo] = useMeetingStore(
-        useShallow((s) => [s.setMeeting, s.meetingHashId, s.topic, s.hotwords, s.isHost, s.type, s.setHeaderContent, s.driftScore, s.driftReason, s.setDriftInfo])
+    const [setMeeting, meetingHashId, title, hotWords, isHost, meetingType, setHeaderContent, driftScore, driftReason, driftIntervention, setDriftInfo] = useMeetingStore(
+        useShallow((s) => [s.setMeeting, s.meetingHashId, s.topic, s.hotwords, s.isHost, s.type, s.setHeaderContent, s.driftScore, s.driftReason, s.driftIntervention, s.setDriftInfo])
     );
     const meetingTypeGraph = (meetingType === 'graph');
     const setTitle = useCallback((title: string) => setMeeting({ topic: title }), [setMeeting]);
