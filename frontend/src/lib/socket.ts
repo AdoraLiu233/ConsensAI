@@ -17,6 +17,7 @@ interface ListenEvents {
   statusAI: (d: ProcessStatus) => void;
   sendSummaryNew: (d: AllSummaries) => void;
   sendInspiration: (d: InspirationData) => void;
+  updateDrift: (data: { drift_score: number; reason: string; intervention: string }) => void;
 }
 
 
@@ -28,11 +29,11 @@ interface EmitEvents {
 
 // NOTE: 浏览器刷新时，后端需要等一段时间才知道socket断开，所以此时后端会有多个sid对应同一个userid
 export const socket: Socket<ListenEvents, EmitEvents> = io(API_BASE_URL, {
-    autoConnect: false,  // MUST disable auto connect, otherwise it will connect immediately
-    withCredentials: true,
-    // ref: https://stackoverflow.com/a/41953165
-    // transports: ['websocket'],
-    // upgrade: false,
+  autoConnect: false,  // MUST disable auto connect, otherwise it will connect immediately
+  withCredentials: true,
+  // ref: https://stackoverflow.com/a/41953165
+  // transports: ['websocket'],
+  // upgrade: false,
 });
 
 
