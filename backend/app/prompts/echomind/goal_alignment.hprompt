@@ -12,8 +12,8 @@ $system$
 
 请基于以上信息，给出评估（JSON 格式）：
 1. drift_score: 0-100（0表示完全符合目标，100表示严重偏离）。
-2. reason: 简短的一句话解释原因（例如：讨论已转向技术实现细节，偏离了盈利模式讨论）。
-3. intervention: 纠偏建议（例如：我们是否应该回到‘用户增长’这个议题？）。
+2. reason: 简短的一句话解释原因，必须用中文，且必须具体引用对话中的内容（例如：讨论已转向具体的代码实现细节，如“后端接口报错”，这偏离了“营销方案”的目标）。
+3. intervention: 纠偏建议，必须用中文（例如：我们是否应该回到‘用户增长’这个议题？）。
 
 $user$
-Assess the goal alignment now.
+Assess the goal alignment now. 请务必使用中文回答 reason 和 intervention。

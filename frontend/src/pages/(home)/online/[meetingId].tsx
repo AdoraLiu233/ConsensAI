@@ -372,26 +372,36 @@ export default function OnlineMeeting() {
                 {meetingTypeGraph && driftScore > 70 && (
                      <div style={{
                          position: 'absolute',
-                         top: '10px',
+                         top: '100px', // 从 10px 调整到 100px，避开顶部的 GoalPanel
                          left: '50%',
                          transform: 'translateX(-50%)',
                          zIndex: 10,
-                         backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                         padding: '8px 16px',
-                         borderRadius: '20px',
+                         backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                         padding: '12px 20px',
+                         borderRadius: '12px',
                          border: '1px solid #ffc9c9',
                          color: '#e03131',
                          fontWeight: 500,
                          pointerEvents: 'none',
-                         boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                          transition: 'opacity 0.5s ease',
                          display: 'flex',
-                         alignItems: 'center',
-                         gap: '8px',
-                         maxWidth: '80%'
+                         flexDirection: 'column',
+                         alignItems: 'flex-start',
+                         gap: '4px',
+                         maxWidth: '80%',
+                         textAlign: 'left'
                      }}>
-                         <span>⚠️</span>
-                         <span>{t('Goal Drift Warning' as any)}: {driftReason}</span>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                             <span style={{ fontSize: '1.2em' }}>⚠️</span>
+                             <span style={{ fontWeight: 700 }}>{t('Goal Drift Warning' as any)}</span>
+                         </div>
+                         <div style={{ fontSize: '0.9em', color: '#495057', display: driftReason ? 'block' : 'none' }}>
+                             <span style={{ fontWeight: 600 }}>{t('Reason' as any) || '原因'}:</span> {driftReason}
+                         </div>
+                         <div style={{ fontSize: '0.9em', color: '#495057', display: driftIntervention ? 'block' : 'none' }}>
+                             <span style={{ fontWeight: 600 }}>{t('Suggestion' as any)}:</span> {driftIntervention}
+                         </div>
                      </div>
                 )}
                 {meetingTypeGraph && (
