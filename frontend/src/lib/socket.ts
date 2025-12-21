@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { API_BASE_URL } from '@/lib/constants';
-import type { AllSummaries, AudioChunkMeta, Identification, InspirationData, ProcessStatus, RequestData, SendAsrData, ToggleMicrophone, UpdateIssueData } from '@/lib/models';
+import type { AllSummaries, AudioChunkMeta, ClarifyData, Identification, InspirationData, OutlineData, ProcessStatus, RequestData, SendAsrData, ToggleMicrophone, UpdateIssueData } from '@/lib/models';
 import { useEffect } from 'react';
 import type { ReservedOrUserEventNames, ReservedOrUserListener } from '@socket.io/component-emitter';
 
@@ -17,6 +17,8 @@ interface ListenEvents {
   statusAI: (d: ProcessStatus) => void;
   sendSummaryNew: (d: AllSummaries) => void;
   sendInspiration: (d: InspirationData) => void;
+  sendOutline: (d: OutlineData) => void;
+  sendClarify: (d: ClarifyData) => void;
 }
 
 

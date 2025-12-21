@@ -88,5 +88,11 @@
     "noInspiration": "暂无新灵感",
     "close": "关闭",
     "silenceTimer": "静默计时",
-    "silenceThresholdReached": "已达到阈值"
+    "silenceThresholdReached": "已达到阈值",
+    "guidanceTitle": "讨论引导",
+    "generateOutline": "生成提纲",
+    "generateClarify": "生成追问",
+    "outlineTitle": "讨论提纲",
+    "clarifyTitle": "追问澄清",
+    "guidanceEmpty": "暂无"
 }

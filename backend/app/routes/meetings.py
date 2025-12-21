@@ -319,6 +319,54 @@ async def manual_update(
     return SuccessResponse()
 
 
+@api_router.post("/api/manualOutline")
+async def manual_outline(
+    meeting: MeetingDepPost,
+    meeting_agent: MeetingAgentDep,
+    sio: SioDep,
+    attendee_manager: AttendeeManagerDep,
+    user: UserDep,
+    directions: Annotated[Optional[List[str]], Body(embed=True)] = None,
+) -> Union[SuccessResponse, WrongAgentResponse]:
+    logger.info("manual_outline")
+    assert user.user_id
+    if isinstance(meeting_agent, MeetingAgentGamma):
+        speaker = attendee_manager.get_speaker_map(str(meeting.meeting_id))
+        await meeting_agent.manual_generate_outline(
+            sio=sio,
+            room=meeting.hash_id,
+            topic=str(meeting.topic),
+            directions=directions or [],
+            speaker=speaker,
+            trigger="manual",
+        )
+        return SuccessResponse()
+    return WrongAgentResponse()
+
+
+@api_router.post("/api/manualClarify")
+async def manual_clarify(
+    meeting: MeetingDepPost,
+    meeting_agent: MeetingAgentDep,
+    sio: SioDep,
+    attendee_manager: AttendeeManagerDep,
+    user: UserDep,
+) -> Union[SuccessResponse, WrongAgentResponse]:
+    logger.info("manual_clarify")
+    assert user.user_id
+    if isinstance(meeting_agent, MeetingAgentGamma):
+        speaker = attendee_manager.get_speaker_map(str(meeting.meeting_id))
+        await meeting_agent.manual_generate_clarify(
+            sio=sio,
+            room=meeting.hash_id,
+            topic=str(meeting.topic),
+            speaker=speaker,
+            trigger="manual",
+        )
+        return SuccessResponse()
+    return WrongAgentResponse()
+
+
 # 用户选择节点：注意需要判断选择的节点和当前的节点是否是一样的
 # TODO 对于dialog何时清空的定义
 @api_router.post("/api/chooseNode")

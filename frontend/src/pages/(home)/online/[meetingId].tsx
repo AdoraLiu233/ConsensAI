@@ -22,6 +22,8 @@ import { useValueChange } from "@/hooks/useValueChange";
 import { useTranslation } from "react-i18next";
 import { SilenceTimer } from "@/components/SilenceTimer";
 import { InspirationCard } from "@/components/InspirationCard";
+import type { OutlineData, ClarifyData } from "@/lib/models";
+import { API_BASE_URL } from "@/lib/constants";
 
 
 export async function Loader({ params }: { params: { meetingId: string } }) {
@@ -49,6 +51,9 @@ export default function OnlineMeeting() {
     // 静默计时器相关状态
     const [lastSpeechTime, setLastSpeechTime] = useState<number | null>(null);
     const [currentInspiration, setCurrentInspiration] = useState<InspirationData | null>(null);
+
+    const [latestOutline, setLatestOutline] = useState<OutlineData | null>(null);
+    const [latestClarify, setLatestClarify] = useState<ClarifyData | null>(null);
 
     const theme = useMantineTheme();
     const isMobile = useMediaQuery(`(max-width: ${theme.breakpoints.sm})`);
@@ -187,6 +192,14 @@ export default function OnlineMeeting() {
         setCurrentInspiration(data);
     }, []));
 
+    useSocket('sendOutline', useCallback((data: OutlineData) => {
+        setLatestOutline(data);
+    }, []));
+
+    useSocket('sendClarify', useCallback((data: ClarifyData) => {
+        setLatestClarify(data);
+    }, []));
+
     // ---------- socket related end ----------
 
     return (
@@ -278,6 +291,71 @@ export default function OnlineMeeting() {
                         {meetingTypeGraph && (
                             <Box px="xs" py="xs" style={{ borderBottom: '1px solid #e0e0e0' }}>
                                 <SilenceTimer lastSpeechTime={lastSpeechTime} threshold={60} />
+                            </Box>
+                        )}
+
+                        {/* 引导信息（提纲/追问） */}
+                        {meetingTypeGraph && (
+                            <Box px="xs" py="xs" style={{ borderBottom: '1px solid #e0e0e0' }}>
+                                <Group gap="xs" justify="space-between" align="center">
+                                    <Text fw={700} size="sm">{t('guidanceTitle')}</Text>
+                                    <Group gap="xs">
+                                        <Button
+                                            size="xs"
+                                            variant="subtle"
+                                            onClick={async () => {
+                                                await fetch(`${API_BASE_URL}/api/manualOutline`, {
+                                                    method: 'POST',
+                                                    credentials: 'include',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ meeting_id: params.meetingId, directions: [] }),
+                                                });
+                                            }}
+                                        >
+                                            {t('generateOutline')}
+                                        </Button>
+                                        <Button
+                                            size="xs"
+                                            variant="subtle"
+                                            onClick={async () => {
+                                                await fetch(`${API_BASE_URL}/api/manualClarify`, {
+                                                    method: 'POST',
+                                                    credentials: 'include',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ meeting_id: params.meetingId }),
+                                                });
+                                            }}
+                                        >
+                                            {t('generateClarify')}
+                                        </Button>
+                                    </Group>
+                                </Group>
+
+                                <Box mt="xs">
+                                    <Text fw={600} size="xs" c="dimmed">{t('outlineTitle')}</Text>
+                                    {latestOutline?.bullets?.length ? (
+                                        <Box>
+                                            {latestOutline.bullets.slice(0, 6).map((b, i) => (
+                                                <Text key={i} size="xs">- {b}</Text>
+                                            ))}
+                                        </Box>
+                                    ) : (
+                                        <Text size="xs" c="dimmed">{t('guidanceEmpty')}</Text>
+                                    )}
+                                </Box>
+
+                                <Box mt="xs">
+                                    <Text fw={600} size="xs" c="dimmed">{t('clarifyTitle')}</Text>
+                                    {latestClarify?.bullets?.length ? (
+                                        <Box>
+                                            {latestClarify.bullets.slice(0, 6).map((b, i) => (
+                                                <Text key={i} size="xs">- {b}</Text>
+                                            ))}
+                                        </Box>
+                                    ) : (
+                                        <Text size="xs" c="dimmed">{t('guidanceEmpty')}</Text>
+                                    )}
+                                </Box>
                             </Box>
                         )}
                         <CardList trans={onlineTransData} />

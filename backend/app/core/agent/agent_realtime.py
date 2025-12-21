@@ -15,6 +15,9 @@ prompt_heuristic = load_from(
     PROMPT_ROOT_ECHOMIND / "heuristic.hprompt", cls=ChatPrompt
 )
 
+prompt_outline = load_from(PROMPT_ROOT_ECHOMIND / "outline.hprompt", cls=ChatPrompt)
+prompt_clarify = load_from(PROMPT_ROOT_ECHOMIND / "clarify.hprompt", cls=ChatPrompt)
+
 prompt_summary = load_from(PROMPT_ROOT_AUTODOC / "summary.hprompt", cls=ChatPrompt)
 
 
@@ -209,4 +212,78 @@ class AgentRealtime:
         result_prompt = await p_evaled.arun(client=self.client, timeout=20)
         logger.info(f"[prompt_heuristic_out] {cnt} {output_path=}")
         output = extract_xml_tag(result_prompt.result_str, "insights").strip()
+        return output
+
+    async def outline(
+        self,
+        topic: str,
+        directions: str,
+        issue_map: str,
+        dialog: str,
+        cnt: int,
+        logger: logging.Logger,
+        file_suffix: str,
+        meeting_language: MeetingLanguageType,
+    ):
+        """Generate a discussion outline."""
+        out_dir = (Path(self.base_dir) / "outline").resolve()
+        out_dir.mkdir(parents=True, exist_ok=True)
+        output_path = (out_dir / f"outline_{cnt}_result{file_suffix}.hprompt").resolve()
+        output_evaled_prompt_path = (
+            out_dir / f"outline_{cnt}_eval{file_suffix}.hprompt"
+        ).resolve()
+        p_evaled = prompt_outline.eval(
+            var_map=VM(
+                topic=topic,
+                directions=directions,
+                issue_map=issue_map,
+                dialog=dialog,
+                meeting_language=meeting_language,
+            ),
+            run_config=RunConfig(
+                output_path=output_path,
+                output_evaled_prompt_path=output_evaled_prompt_path,
+            ),
+        )
+        p_evaled.run_config.credential_path = None
+        logger.info(f"[prompt_outline_in] {cnt} {output_evaled_prompt_path=}")
+        result_prompt = await p_evaled.arun(client=self.client, timeout=20)
+        logger.info(f"[prompt_outline_out] {cnt} {output_path=}")
+        output = extract_xml_tag(result_prompt.result_str, "outline").strip()
+        return output
+
+    async def clarify_questions(
+        self,
+        topic: str,
+        issue_map: str,
+        dialog: str,
+        cnt: int,
+        logger: logging.Logger,
+        file_suffix: str,
+        meeting_language: MeetingLanguageType,
+    ):
+        """Generate clarification follow-up questions."""
+        out_dir = (Path(self.base_dir) / "clarify").resolve()
+        out_dir.mkdir(parents=True, exist_ok=True)
+        output_path = (out_dir / f"clarify_{cnt}_result{file_suffix}.hprompt").resolve()
+        output_evaled_prompt_path = (
+            out_dir / f"clarify_{cnt}_eval{file_suffix}.hprompt"
+        ).resolve()
+        p_evaled = prompt_clarify.eval(
+            var_map=VM(
+                topic=topic,
+                issue_map=issue_map,
+                dialog=dialog,
+                meeting_language=meeting_language,
+            ),
+            run_config=RunConfig(
+                output_path=output_path,
+                output_evaled_prompt_path=output_evaled_prompt_path,
+            ),
+        )
+        p_evaled.run_config.credential_path = None
+        logger.info(f"[prompt_clarify_in] {cnt} {output_evaled_prompt_path=}")
+        result_prompt = await p_evaled.arun(client=self.client, timeout=20)
+        logger.info(f"[prompt_clarify_out] {cnt} {output_path=}")
+        output = extract_xml_tag(result_prompt.result_str, "clarify_questions").strip()
         return output

@@ -12,11 +12,6 @@ export interface SummaryData {
   id: number;
   summary: string;
 }
-export interface InspirationData {
-  ideas: string[];
-  trigger: string;
-  generated_at?: number | null;
-}
 export interface AudioChunk {
   meeting_id: string;
   file_id: number | null;
@@ -31,8 +26,27 @@ export interface AudioChunkMeta {
   begin: number;
   end: number;
 }
+export interface ClarifyData {
+  kind?: "outline" | "clarify" | "intervention" | "question_bank";
+  title: string;
+  bullets: string[];
+  trigger: string;
+  generated_at?: number | null;
+}
 export interface Identification {
   role: "host" | "participant";
+}
+export interface InspirationData {
+  ideas: string[];
+  trigger: string;
+  generated_at?: number | null;
+}
+export interface InterventionData {
+  kind?: "outline" | "clarify" | "intervention" | "question_bank";
+  title: string;
+  bullets: string[];
+  trigger: string;
+  generated_at?: number | null;
 }
 export interface Issue {
   full_id: string;
@@ -69,8 +83,22 @@ export interface Relation {
   content: string;
   [k: string]: unknown;
 }
+export interface OutlineData {
+  kind?: "outline" | "clarify" | "intervention" | "question_bank";
+  title: string;
+  bullets: string[];
+  trigger: string;
+  generated_at?: number | null;
+}
 export interface ProcessStatus {
   running: boolean;
+}
+export interface QuestionBankData {
+  kind?: "outline" | "clarify" | "intervention" | "question_bank";
+  title: string;
+  bullets: string[];
+  trigger: string;
+  generated_at?: number | null;
 }
 export interface RequestData {
   cnt: number;

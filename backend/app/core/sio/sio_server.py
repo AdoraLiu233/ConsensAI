@@ -2,9 +2,13 @@ from pydantic_socketio import FastAPISocketIO
 
 from app.core.sio.models import (
     AllSummaries,
+    ClarifyData,
     Identification,
     InspirationData,
+    InterventionData,
+    OutlineData,
     ProcessStatus,
+    QuestionBankData,
     RequestData,
     UpdateIssueData,
     SendAsrData,
@@ -38,3 +42,15 @@ class SioServer(FastAPISocketIO):
 
     async def sendInspiration(self, sid: str, data: InspirationData):
         await self.emit("sendInspiration", data, to=sid)
+
+    async def sendOutline(self, sid: str, data: OutlineData):
+        await self.emit("sendOutline", data, to=sid)
+
+    async def sendClarify(self, sid: str, data: ClarifyData):
+        await self.emit("sendClarify", data, to=sid)
+
+    async def sendIntervention(self, sid: str, data: InterventionData):
+        await self.emit("sendIntervention", data, to=sid)
+
+    async def sendQuestionBank(self, sid: str, data: QuestionBankData):
+        await self.emit("sendQuestionBank", data, to=sid)

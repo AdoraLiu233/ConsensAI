@@ -88,5 +88,11 @@
     "noInspiration": "No new inspiration",
     "close": "Close",
     "silenceTimer": "Silence Timer",
-    "silenceThresholdReached": "Threshold Reached"
+    "silenceThresholdReached": "Threshold Reached",
+    "guidanceTitle": "Facilitation",
+    "generateOutline": "Generate outline",
+    "generateClarify": "Generate follow-ups",
+    "outlineTitle": "Discussion outline",
+    "clarifyTitle": "Clarifying questions",
+    "guidanceEmpty": "None"
 }

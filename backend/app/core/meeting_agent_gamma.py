@@ -23,7 +23,7 @@ from app.core.meeting_agent import MeetingAgent
 from app.core.attendee_manager import AttendeeManager
 from app.core.parsed_issues import ParsedIssue
 from app.core.sio.sio_server import SioServer
-from app.core.sio.models import InspirationData, UpdateIssueData
+from app.core.sio.models import ClarifyData, InspirationData, OutlineData, UpdateIssueData
 from app.types import MeetingLanguageType
 
 
@@ -72,6 +72,8 @@ class MeetingAgentGamma(MeetingAgent):
         self.suggest_position_cnt = 0
         self.suggest_issue_cnt = 0
         self.heuristic_cnt = 0
+        self.outline_cnt = 0
+        self.clarify_cnt = 0
 
         # 用户选择的节点, 默认没有选中
         self.chosen_node: int = -1
@@ -89,6 +91,93 @@ class MeetingAgentGamma(MeetingAgent):
 
         self.auto_generate = False
         self.last_issue = None
+
+    @staticmethod
+    def _parse_bullet_lines(text: str) -> List[str]:
+        t = (text or "").strip()
+        if not t or t.lower() == "none":
+            return []
+        bullets: List[str] = []
+        for raw_line in t.splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
+            for prefix in ("- ", "* ", "• "):
+                if line.startswith(prefix):
+                    line = line[len(prefix) :].strip()
+                    break
+            if line:
+                bullets.append(line)
+        return bullets
+
+    def _get_recent_dialog(self, speaker: Dict[str, str], last_n: int = 24) -> str:
+        if not self.sentences:
+            return ""
+        start = max(0, len(self.sentences) - last_n)
+        return parse_sentences_to_dialog(self.sentences[start:], speaker)
+
+    async def manual_generate_outline(
+        self,
+        sio: SioServer,
+        room: str,
+        topic: str,
+        directions: List[str],
+        speaker: Dict[str, str],
+        trigger: str = "manual",
+    ):
+        dialog = self._get_recent_dialog(speaker)
+        directions_text = "\n".join([f"- {d}" for d in directions if d])
+        output = await self.agent.outline(
+            topic=str(topic),
+            directions=directions_text,
+            issue_map=str(self.issue_map),
+            dialog=dialog,
+            cnt=self.outline_cnt,
+            logger=self.logger,
+            file_suffix="",
+            meeting_language=self.meeting_language,
+        )
+        self.outline_cnt += 1
+        bullets = self._parse_bullet_lines(output)
+        await sio.sendOutline(
+            room,
+            OutlineData(
+                title=str(topic),
+                bullets=bullets,
+                trigger=trigger,
+                generated_at=int(time.time()),
+            ),
+        )
+
+    async def manual_generate_clarify(
+        self,
+        sio: SioServer,
+        room: str,
+        topic: str,
+        speaker: Dict[str, str],
+        trigger: str = "manual",
+    ):
+        dialog = self._get_recent_dialog(speaker)
+        output = await self.agent.clarify_questions(
+            topic=str(topic),
+            issue_map=str(self.issue_map),
+            dialog=dialog,
+            cnt=self.clarify_cnt,
+            logger=self.logger,
+            file_suffix="",
+            meeting_language=self.meeting_language,
+        )
+        self.clarify_cnt += 1
+        bullets = self._parse_bullet_lines(output)
+        await sio.sendClarify(
+            room,
+            ClarifyData(
+                title=str(topic),
+                bullets=bullets,
+                trigger=trigger,
+                generated_at=int(time.time()),
+            ),
+        )
 
         # 用新的asr结果更新meeting agent
 

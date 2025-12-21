@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from app.core.agent.models import Issue
 from app.core.asr.models import SendAsrData as SendAsrData
-from app.types import RoleType
+from app.types import GuidanceKind, RoleType
 
 
 class AudioChunk(BaseModel):
@@ -59,3 +59,27 @@ class InspirationData(BaseModel):
     ideas: List[str]
     trigger: str
     generated_at: Optional[int] = None
+
+
+class _BaseGuidanceData(BaseModel):
+    kind: GuidanceKind
+    title: str
+    bullets: List[str]
+    trigger: str
+    generated_at: Optional[int] = None
+
+
+class OutlineData(_BaseGuidanceData):
+    kind: GuidanceKind = "outline"
+
+
+class ClarifyData(_BaseGuidanceData):
+    kind: GuidanceKind = "clarify"
+
+
+class InterventionData(_BaseGuidanceData):
+    kind: GuidanceKind = "intervention"
+
+
+class QuestionBankData(_BaseGuidanceData):
+    kind: GuidanceKind = "question_bank"
