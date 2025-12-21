@@ -58,6 +58,16 @@ class ParsedIssue(BaseModel):
             return True
         return False
 
+    def update_position_ambiguity(self, full_id: str, ambiguity: Optional[str]) -> bool:
+        """
+        更新 Position 节点的歧义提醒
+        """
+        position = self.get_position_by_full_id(full_id)
+        if position:
+            position.ambiguity = ambiguity
+            return True
+        return False
+
     def update_issue_status(self, full_id: str, status: Optional[Literal["consensus", "controversial", "pending"]]) -> bool:
         """
         更新 Issue 节点的状态

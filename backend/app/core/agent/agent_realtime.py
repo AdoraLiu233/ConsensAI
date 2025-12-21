@@ -15,6 +15,9 @@ prompt_heuristic = load_from(PROMPT_ROOT_ECHOMIND / "heuristic.hprompt", cls=Cha
 prompt_goal_alignment = load_from(
     PROMPT_ROOT_ECHOMIND / "goal_alignment.hprompt", cls=ChatPrompt
 )
+prompt_ambiguity = load_from(
+    PROMPT_ROOT_ECHOMIND / "ambiguity.hprompt", cls=ChatPrompt
+)
 
 prompt_summary = load_from(PROMPT_ROOT_AUTODOC / "summary.hprompt", cls=ChatPrompt)
 
@@ -250,3 +253,40 @@ class AgentRealtime:
         logger.info(f"[prompt_goal_out] {cnt} {output_path=}")
         logger.info(f"[prompt_goal_result] {result_prompt.result_str}")
         return result_prompt.result_str
+
+    async def gamma_check_ambiguity(
+        self,
+        dialog: str,
+        positions_str: str,
+        cnt: int,
+        logger: logging.Logger,
+        meeting_language: MeetingLanguageType,
+        file_suffix: str = "",
+    ):
+        output_path = (
+            Path(self.base_dir)
+            / "ambiguity"
+            / f"ambiguity_{cnt}_result{file_suffix}.hprompt"
+        ).resolve()
+        output_evaled_prompt_path = (
+            Path(self.base_dir)
+            / "ambiguity"
+            / f"ambiguity_{cnt}_eval{file_suffix}.hprompt"
+        ).resolve()
+        p_evaled = prompt_ambiguity.eval(
+            var_map=VM(
+                dialog=dialog,
+                positions=positions_str,
+                language=meeting_language,
+            ),
+            run_config=RunConfig(
+                output_path=output_path,
+                output_evaled_prompt_path=output_evaled_prompt_path,
+            ),
+        )
+        p_evaled.run_config.credential_path = None
+        logger.info(f"[prompt_ambiguity_in] {cnt} {output_evaled_prompt_path=}")
+        result_prompt = await p_evaled.arun(client=self.client, timeout=20)
+        logger.info(f"[prompt_ambiguity_out] {cnt} {output_path=}")
+        return result_prompt.result_str
+

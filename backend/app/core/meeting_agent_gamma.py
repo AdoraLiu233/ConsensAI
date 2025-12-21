@@ -8,7 +8,7 @@ from typing import Dict, List, Literal, Optional, Tuple
 from handyllm.types import PathType
 from tenacity import retry, stop_after_attempt, RetryCallState
 
-from app.core.agent.models import Issue, Sentence
+from app.core.agent.models import Issue, Sentence, Position
 from app.core.agent.parser import (
     issue_map_to_str,
     gamma_parse_new_position,
@@ -73,6 +73,7 @@ class MeetingAgentGamma(MeetingAgent):
         self.suggest_issue_cnt = 0
         self.heuristic_cnt = 0
         self.goal_alignment_cnt = 0
+        self.ambiguity_cnt = 0
 
         # Meeting Goal
         self.meeting_goal = ""
@@ -90,6 +91,10 @@ class MeetingAgentGamma(MeetingAgent):
         self.SILENCE_THRESHOLD = 60  # seconds
         self.SILENCE_COOLDOWN = 60  # seconds
         self.generating_inspiration = False
+
+        # Ambiguity check
+        self.last_ambiguity_check_ts = 0.0
+        self.AMBIGUITY_CHECK_INTERVAL = 20  # seconds
 
         self.auto_generate = False
         self.last_issue = None
@@ -220,7 +225,7 @@ class MeetingAgentGamma(MeetingAgent):
 
                 # 文转position
                 try:
-                    is_edited = await self.text_to_position(
+                    is_edited, new_positions = await self.text_to_position(
                         parse_sentences_to_dialog(
                             self.sentences[self.start_position_index : last_index],
                             speaker,
@@ -231,6 +236,26 @@ class MeetingAgentGamma(MeetingAgent):
                         self.is_running = False
                         self.logger.info("[interrupt_position]")
                         continue
+
+                    # Ambiguity Check: 如果生成了新的观点，检查是否存在歧义
+                    if new_positions:
+                        # 提取新生成的 Position 的 ID
+                        # new_positions 是一个字典列表，不是对象列表，所以不能用 .full_id
+                        # 实际上 text_to_position 返回的是 parsed_new_positions (字典列表)
+                        # 但是 add_new_positions 返回的是 Position 对象列表 (p2i_postions)
+                        # 我们需要修改 text_to_position 让它返回 Position 对象列表
+                        
+                        # 修正：text_to_position 返回的是 (is_edited, parsed_new_positions)
+                        # parsed_new_positions 是字典列表 [{'order_id': '1.1', ...}]
+                        # 我们需要的是已经添加到 parsed_issues_new 中的 Position 对象
+                        # 但是 text_to_position 内部调用了 add_new_positions，它返回了 Position 对象列表
+                        # 所以我们应该让 text_to_position 返回这个列表
+                        
+                        new_position_ids = [p.full_id for p in new_positions]
+                        await self.check_ambiguity(
+                            meeting_id, sio, room, attendee_manager, target_position_ids=new_position_ids
+                        )
+
                 except Exception as e:
                     self.logger.warning(
                         f"[text_to_position_error]: {str(e)}", exc_info=True
@@ -346,10 +371,10 @@ class MeetingAgentGamma(MeetingAgent):
     @retry(stop=stop_after_attempt(3))
     async def text_to_position(
         self, dialog: str, retry_state: Optional[RetryCallState] = None
-    ) -> bool:
+    ) -> Tuple[bool, List[Position]]:
         """
         文转position
-        返回需要调用文转 issue agent 的 position 的 full_id 列表
+        返回 (is_edited, new_positions_list)
         """
         # get input data
         current_positions, input_positions = (
@@ -421,6 +446,7 @@ class MeetingAgentGamma(MeetingAgent):
             last_chosen_id=last_issue_id,
         )
         p2i_postions = []
+        parsed_new_positions = []
         if not is_edited:
             parsed_new_positions = gamma_parse_new_position(new_positions)
             self.logger.info(f"[parsed_new_positions] {parsed_new_positions=}")
@@ -431,7 +457,8 @@ class MeetingAgentGamma(MeetingAgent):
                     chosen_id=last_issue_id,
                     input_positions=input_positions,
                 )
-        return is_edited
+        # 返回的是 Position 对象列表，而不是原始的字典列表
+        return is_edited, p2i_postions
 
     @retry(stop=stop_after_attempt(3))
     async def text_to_issue(
@@ -596,6 +623,85 @@ class MeetingAgentGamma(MeetingAgent):
                     f"[silence_watchdog_error]: {str(e)}", exc_info=True
                 )
         self.logger.info("[silence_watchdog] stop")
+
+    async def check_ambiguity(
+        self,
+        meeting_id: int,
+        sio: SioServer,
+        room: str,
+        attendee_manager: AttendeeManager,
+        target_position_ids: List[str] = [],
+    ):
+        import json
+        speaker = attendee_manager.get_speaker_map(meeting_id)
+        # Get recent dialog (last 10 sentences)
+        recent_sentences = self.sentences[-10:]
+        if len(recent_sentences) < 3:
+            return
+
+        recent_dialog = parse_sentences_to_dialog(recent_sentences, speaker)
+
+        # 构造 positions_str
+        positions_data = []
+        if target_position_ids:
+            for pid in target_position_ids:
+                pos = self.parsed_issues_new.get_position_by_full_id(pid)
+                if pos:
+                    positions_data.append({
+                        "id": pos.full_id,
+                        "content": pos.content
+                    })
+        
+        if not positions_data:
+            return
+
+        positions_str = json.dumps(positions_data, ensure_ascii=False, indent=2)
+
+        self.ambiguity_cnt += 1
+        result = await self.agent.gamma_check_ambiguity(
+            dialog=recent_dialog,
+            positions_str=positions_str,
+            cnt=self.ambiguity_cnt,
+            logger=self.logger,
+            meeting_language=self.meeting_language,
+        )
+
+        try:
+            # 尝试解析 JSON
+            # 有时候 LLM 会输出 ```json ... ```，需要处理
+            json_str = result
+            if "```json" in json_str:
+                json_str = json_str.split("```json")[1].split("```")[0].strip()
+            elif "```" in json_str:
+                json_str = json_str.split("```")[1].split("```")[0].strip()
+            
+            ambiguity_map = json.loads(json_str)
+            
+            has_update = False
+            for pid, data in ambiguity_map.items():
+                # data is {"score": int, "question": str}
+                # 兼容旧格式（如果 LLM 偶尔返回旧格式）
+                if isinstance(data, str):
+                    score = 10
+                    question = data
+                else:
+                    score = data.get("score", 0)
+                    question = data.get("question", "None")
+
+                if score >= 7 and question and question != "None":
+                    pos = self.parsed_issues_new.get_position_by_full_id(pid)
+                    if pos:
+                        self.logger.info(f"[ambiguity_detected] {pid} (score={score}): {question}")
+                        pos.ambiguity = question
+                        has_update = True
+            
+            if has_update:
+                # 推送更新后的 Issue Map
+                self.update_and_save_issue_map()
+                await self.gamma_send_issue_map(sio, room)
+
+        except Exception as e:
+            self.logger.warning(f"[check_ambiguity_error] Failed to parse JSON: {result}. Error: {e}")
 
     def set_meeting_goal(self, goal: str):
         self.meeting_goal = goal
