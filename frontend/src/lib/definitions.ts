@@ -26,6 +26,7 @@ type IssueNodeData = CustomNodeData & {
 
 type PositionNodeData = CustomNodeData & {
 	status?: PositionStatusType;
+	ambiguity?: string;
 }
 
 export type IssueNode = Node<IssueNodeData, 'issue'>;
