@@ -14,6 +14,9 @@ prompt_issue = load_from(PROMPT_ROOT_ECHOMIND / "issue.hprompt", cls=ChatPrompt)
 prompt_heuristic = load_from(
     PROMPT_ROOT_ECHOMIND / "heuristic.hprompt", cls=ChatPrompt
 )
+prompt_goal_alignment = load_from(
+    PROMPT_ROOT_ECHOMIND / "goal_alignment.hprompt", cls=ChatPrompt
+)
 
 prompt_summary = load_from(PROMPT_ROOT_AUTODOC / "summary.hprompt", cls=ChatPrompt)
 
@@ -210,3 +213,42 @@ class AgentRealtime:
         logger.info(f"[prompt_heuristic_out] {cnt} {output_path=}")
         output = extract_xml_tag(result_prompt.result_str, "insights").strip()
         return output
+
+    async def check_goal_alignment(
+        self,
+        current_goal: str,
+        recent_dialog: str,
+        current_map_context: str,
+        cnt: int,
+        logger: logging.Logger,
+        file_suffix: str,
+    ):
+        """
+        检查会议是否偏离目标
+        """
+        output_path = (
+            Path(self.base_dir)
+            / "goal_alignment"
+            / f"goal_{cnt}_result{file_suffix}.hprompt"
+        ).resolve()
+        output_evaled_prompt_path = (
+            Path(self.base_dir)
+            / "goal_alignment"
+            / f"goal_{cnt}_eval{file_suffix}.hprompt"
+        ).resolve()
+        p_evaled = prompt_goal_alignment.eval(
+            var_map=VM(
+                currentGoal=current_goal,
+                recentDialog=recent_dialog,
+                currentMapContext=current_map_context,
+            ),
+            run_config=RunConfig(
+                output_path=output_path,
+                output_evaled_prompt_path=output_evaled_prompt_path,
+            ),
+        )
+        p_evaled.run_config.credential_path = None
+        logger.info(f"[prompt_goal_in] {cnt} {output_evaled_prompt_path=}")
+        result_prompt = await p_evaled.arun(client=self.client, timeout=20)
+        logger.info(f"[prompt_goal_out] {cnt} {output_path=}")
+        return result_prompt.result_str

@@ -186,6 +186,23 @@ export default function Flow({ initialNodeData, isEditable }: { initialNodeData:
   const [running, setRunning] = useState(false);
 
   const meetingHashId = useMeetingStore(s => s.meetingHashId);
+  const driftScore = useMeetingStore(s => s.driftScore);
+  
+  const getBackgroundColor = (score: number) => {
+      if (score < 30) return undefined; 
+      // sepia/orange tint for drift
+      // We can use a radial gradient or just background color.
+      // Requirement says: radial-gradient or filter: sepia.
+      // Let's use filter sepia for "Ambient" feel if possible, or just background color.
+      // Background color is safer for visibility.
+      // 30-70: Light Orange
+      // 70-100: Light Red
+      const intensity = (score - 30) / 70; // 0 to 1
+      if (score > 70) {
+          return `rgba(255, 200, 200, ${0.1 + intensity * 0.3})`;
+      }
+      return `rgba(255, 240, 200, ${0.1 + intensity * 0.3})`;
+  };
 
   const onNodeDragStart: OnNodeDrag<CustomNodeType> = (event, node) => {
     setDraggingNode(node);
@@ -257,6 +274,8 @@ export default function Flow({ initialNodeData, isEditable }: { initialNodeData:
       onNodeDragStop={isEditable ? onNodeDragStop : undefined} // 禁用拖动停止
       style={{
         height: '100%',
+        backgroundColor: getBackgroundColor(driftScore),
+        transition: 'background-color 1s ease',
       }}
       deleteKeyCode={isEditable ? 'Delete' : null} // 禁用删除
       nodeTypes={nodeTypes}

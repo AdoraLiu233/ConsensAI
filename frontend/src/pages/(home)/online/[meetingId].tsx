@@ -22,6 +22,8 @@ import { useValueChange } from "@/hooks/useValueChange";
 import { useTranslation } from "react-i18next";
 import { SilenceTimer } from "@/components/SilenceTimer";
 import { InspirationCard } from "@/components/InspirationCard";
+import { GoalPanel } from "@/components/GoalPanel";
+import { GoalIntervention } from "@/components/GoalIntervention";
 
 
 export async function Loader({ params }: { params: { meetingId: string } }) {
@@ -65,8 +67,8 @@ export default function OnlineMeeting() {
         leaveMeeting, endMeeting, changeTitle: execChangeTitle,
     } = useMeeting();
 
-    const [setMeeting, meetingHashId, title, hotWords, isHost, meetingType, setHeaderContent] = useMeetingStore(
-        useShallow((s) => [s.setMeeting, s.meetingHashId, s.topic, s.hotwords, s.isHost, s.type, s.setHeaderContent])
+    const [setMeeting, meetingHashId, title, hotWords, isHost, meetingType, setHeaderContent, driftScore, driftReason, driftIntervention, setDriftInfo] = useMeetingStore(
+        useShallow((s) => [s.setMeeting, s.meetingHashId, s.topic, s.hotwords, s.isHost, s.type, s.setHeaderContent, s.driftScore, s.driftReason, s.driftIntervention, s.setDriftInfo])
     );
     const meetingTypeGraph = (meetingType === 'graph');
     const setTitle = useCallback((title: string) => setMeeting({ topic: title }), [setMeeting]);
@@ -186,6 +188,11 @@ export default function OnlineMeeting() {
         // 显示醒目的灵感卡片
         setCurrentInspiration(data);
     }, []));
+
+    useSocket('updateDrift', useCallback((data: any) => {
+        console.log("updateDrift", data);
+        setDriftInfo(data.drift_score, data.reason, data.intervention);
+    }, [setDriftInfo]));
 
     // ---------- socket related end ----------
 
@@ -322,7 +329,21 @@ export default function OnlineMeeting() {
             {/* 右侧 */}
 
             {/* 导图/文档 */}
-            <Flex direction='column' style={{ width: "100%" }}>
+            <Flex direction='column' style={{ width: "100%", position: 'relative' }}>
+                {meetingTypeGraph && <GoalPanel />}
+                {meetingTypeGraph && driftScore > 70 && (
+                    <GoalIntervention 
+                        reason={driftReason} 
+                        intervention={driftIntervention} 
+                        onLocate={() => {
+                            // Logic to locate goal node. For now, we can just log or maybe trigger a fitView on ID 1 if possible.
+                            // Since Flow is a child, we might need a context or event bus.
+                            // Or just ignore the locate action for this MVP step if too complex to wire up.
+                            console.log("Locate goal node");
+                        }} 
+                        onClose={() => setDriftInfo(0, "", "")} 
+                    />
+                )}
                 {
                     meetingTypeGraph ?
                     <Flow initialNodeData={initialAsrData.issue_map} isEditable={true} />

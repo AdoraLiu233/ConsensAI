@@ -319,6 +319,27 @@ async def manual_update(
     return SuccessResponse()
 
 
+@api_router.post("/api/setGoal")
+async def set_goal(
+    meeting: MeetingDepPost,
+    meeting_agent: MeetingAgentDep,
+    goal: Embed_Body_Str,
+) -> Union[SuccessResponse, WrongAgentResponse]:
+    """
+    前端 -> 后端:
+    {
+        "meeting_hash_id": str,
+        "goal": str
+    }
+    """
+    logger.info(f"user set goal: {goal}")
+    if isinstance(meeting_agent, MeetingAgentGamma):
+        meeting_agent.set_meeting_goal(goal)
+        return SuccessResponse()
+    else:
+        return WrongAgentResponse()
+
+
 # 用户选择节点：注意需要判断选择的节点和当前的节点是否是一样的
 # TODO 对于dialog何时清空的定义
 @api_router.post("/api/chooseNode")

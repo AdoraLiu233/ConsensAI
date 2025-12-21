@@ -69,3 +69,9 @@ class DeleteOperation(Operation):
 class ModifyOperation(Operation):
     op: Literal["MODIFY"] = "MODIFY"
     new_content: str
+
+
+class GoalAlignment(BaseModel):
+    drift_score: int
+    reason: str
+    intervention: str

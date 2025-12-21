@@ -72,6 +72,10 @@ class MeetingAgentGamma(MeetingAgent):
         self.suggest_position_cnt = 0
         self.suggest_issue_cnt = 0
         self.heuristic_cnt = 0
+        self.goal_alignment_cnt = 0
+
+        # Meeting Goal
+        self.meeting_goal = ""
 
         # 用户选择的节点, 默认没有选中
         self.chosen_node: int = -1
@@ -594,6 +598,92 @@ class MeetingAgentGamma(MeetingAgent):
                     f"[silence_watchdog_error]: {str(e)}", exc_info=True
                 )
         self.logger.info("[silence_watchdog] stop")
+
+    def set_meeting_goal(self, goal: str):
+        self.meeting_goal = goal
+        self.logger.info(f"[set_meeting_goal] {goal=}")
+
+    async def run_goal_check(
+        self,
+        meeting_id: int,
+        sio: SioServer,
+        room: str,
+        attendee_manager: AttendeeManager,
+    ):
+        if not self.meeting_goal:
+            return
+
+        speaker = attendee_manager.get_speaker_map(meeting_id)
+        # Get recent 1 minute dialog (approx 30 sentences maybe? or time based)
+        # Using simple heuristic: last 20 sentences
+        recent_sentences = self.sentences[-20:]
+        recent_dialog = parse_sentences_to_dialog(recent_sentences, speaker)
+        
+        # Get current map context (core issues)
+        # Just dumping the map might be too large. 
+        # Using issue titles and direct children.
+        current_map_context = issue_map_to_str(self.parsed_issues_new.parsed_issue) # Using full map for now as it's stringified
+        
+        cache_file = (
+            Path(self.cm.base_dir, f"goal_alignment/goal_{self.goal_alignment_cnt}.txt")
+        ).resolve()
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        
+        try:
+            result_raw = await self.cm.cache(
+                self.agent.check_goal_alignment,
+                cache_file,
+            )(
+                current_goal=self.meeting_goal,
+                recent_dialog=recent_dialog,
+                current_map_context=current_map_context,
+                cnt=self.goal_alignment_cnt,
+                logger=self.logger,
+                file_suffix="",
+            )
+            
+            # Parse JSON from result_raw (LLM might wrap in ```json ... ```)
+            import json
+            import re
+            
+            json_str = result_raw
+            match = re.search(r"```json\s*(.*?)\s*```", result_raw, re.DOTALL)
+            if match:
+                json_str = match.group(1)
+            else:
+                 match = re.search(r"\{.*\}", result_raw, re.DOTALL)
+                 if match:
+                     json_str = match.group(0)
+
+            try:
+                data = json.loads(json_str)
+                self.logger.info(f"[goal_check_result] {data=}")
+                
+                # Send to frontend
+                await sio.emit("updateDrift", data, room=room)
+                
+            except json.JSONDecodeError:
+                self.logger.error(f"[goal_check_error] Failed to decode JSON: {json_str}")
+                
+            self.goal_alignment_cnt += 1
+
+        except Exception as e:
+            self.logger.error(f"[goal_check_error] {e}", exc_info=True)
+
+    async def goal_check_scheduler(
+        self,
+        meeting_id: int,
+        sio: SioServer,
+        room: str,
+        attendee_manager: AttendeeManager,
+        meeting_manager,
+    ):
+        self.logger.info("[goal_check_scheduler] start")
+        while meeting_manager.isRunning(str(meeting_id)):
+            await asyncio.sleep(45) # Check every 45 seconds (30-60s per requirements)
+            if self.meeting_goal:
+                await self.run_goal_check(meeting_id, sio, room, attendee_manager)
+        self.logger.info("[goal_check_scheduler] stop")
 
     def update_and_save_issue_map(self):
         """
