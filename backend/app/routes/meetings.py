@@ -26,7 +26,7 @@ from app.deps import (
 from app.core.asr.models import AsrSentence, TotalData
 from app.core.meeting_agent_gamma import MeetingAgentGamma
 from app.core.meeting_agent_summary import MeetingAgentSummary
-from app.core.agent.models import Issue, Position
+from app.core.agent.models import Issue
 from app.models import (
     AddNodeResponse,
     Code,
@@ -482,9 +482,9 @@ async def update_position_status(
         if not position:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Position with full_id {full_id} not found"
+                detail=f"Position with full_id {full_id} not found",
             )
-        
+
         room = meeting.hash_id
         await meeting_agent.gamma_update_position_status(
             sio=sio, room=room, full_id=str(full_id), status=status
@@ -524,9 +524,9 @@ async def update_issue_status(
         if not issue:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Issue with full_id {full_id} not found"
+                detail=f"Issue with full_id {full_id} not found",
             )
-        
+
         room = meeting.hash_id
         await meeting_agent.gamma_update_issue_status(
             sio=sio, room=room, full_id=str(full_id), status=status
@@ -565,7 +565,7 @@ async def get_controversial_items(
             "items": [
                 {
                     "type": "issue" if isinstance(item, Issue) else "position",
-                    **item.model_dump()
+                    **item.model_dump(),
                 }
                 for item in items
             ]

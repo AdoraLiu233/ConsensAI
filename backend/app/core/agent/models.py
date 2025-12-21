@@ -37,7 +37,9 @@ class Position(NodeElement):
     cons: List[Argument]
     note: Optional[str] = None
     generated_issue: bool = False  # 标记当前的内容是否生成过 issue , 如果 position 内容变化了,需要将这个值置为 False
-    status: Optional[Literal["consensus", "controversial", "pending"]] = None  # 达成共识/存在分歧/待延展
+    status: Optional[Literal["consensus", "controversial", "pending"]] = (
+        None  # 达成共识/存在分歧/待延展
+    )
 
 
 class Relation(BaseModel):
@@ -51,7 +53,9 @@ class Issue(NodeElement):
     issue_id: int
     positions: List[Position]
     source: Optional[Relation] = None
-    status: Optional[Literal["consensus", "controversial", "pending"]] = None  # 达成共识/存在分歧/待延展
+    status: Optional[Literal["consensus", "controversial", "pending"]] = (
+        None  # 达成共识/存在分歧/待延展
+    )
 
 
 class Operation(BaseModel):
