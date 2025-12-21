@@ -51,7 +51,8 @@ const addPositionNode = (nodes: CustomNodeType[], edges: Edge[], positionNode: P
         data: { 
           content: positionNode.content, 
           confirmed: positionNode.type === "confirmed" ? true : false,
-          status: (positionNode as any).status || undefined
+          status: (positionNode as any).status || undefined,
+          ambiguity: (positionNode as any).ambiguity || undefined
         } 
       }) : node
     ));
@@ -68,6 +69,7 @@ const addPositionNode = (nodes: CustomNodeType[], edges: Edge[], positionNode: P
         editable: isEditable,
         deletable: true,  // position都可删除
         status: (positionNode as any).status || undefined,
+        ambiguity: (positionNode as any).ambiguity || undefined,
       },
       ...nodeDefaults,
     }];

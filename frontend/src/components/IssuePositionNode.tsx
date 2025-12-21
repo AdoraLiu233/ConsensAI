@@ -1,7 +1,7 @@
 import { useState, useEffect, type ChangeEventHandler } from 'react';
 import { type NodeProps, Position, Handle, useReactFlow } from '@xyflow/react';
 import { Button, Textarea, Popover, TextInput, ActionIcon, Menu, Badge } from '@mantine/core';
-import { IconCheck, IconMinus, IconPlus, IconX, IconChevronDown } from '@tabler/icons-react';
+import { IconCheck, IconMinus, IconPlus, IconX, IconChevronDown, IconAlertTriangle } from '@tabler/icons-react';
 import type { CustomNodeType, IssueNode, PositionStatusType } from '@/lib/definitions';
 import { meetingsAddNode, meetingsChooseNode, meetingsDeleteNode, meetingsModifyNode } from '@/client';
 import { success, error } from '@/lib/notifications';
@@ -33,6 +33,9 @@ export function IssuePositionNode({ id, data, type }: NodeProps<CustomNodeType>)
   // 获取当前节点的状态（对 Issue 和 Position 节点都支持）
   const currentStatus = (data as any).status;
   const [localStatus, setLocalStatus] = useState<PositionStatusType | null>(currentStatus || null);
+  
+  // 获取歧义信息
+  const ambiguity = (data as any).ambiguity;
 
   // 当 data.status 变化时，同步 localStatus
   useEffect(() => {
@@ -344,6 +347,24 @@ export function IssuePositionNode({ id, data, type }: NodeProps<CustomNodeType>)
               </div>
             )}
             </div>
+            {ambiguity && (
+              <div style={{
+                marginTop: '4px',
+                padding: '6px',
+                backgroundColor: '#FFF3E0',
+                border: '1px solid #FFB74D',
+                borderRadius: '4px',
+                fontSize: '12px',
+                color: '#E65100',
+                display: 'flex',
+                alignItems: 'start',
+                gap: '4px',
+                lineHeight: '1.4'
+              }}>
+                <IconAlertTriangle size={14} style={{ marginTop: '2px', flexShrink: 0 }} />
+                <span>{ambiguity}</span>
+              </div>
+            )}
           </div>
 
           <div
@@ -536,6 +557,17 @@ export function IssuePositionNode({ id, data, type }: NodeProps<CustomNodeType>)
                 </div>
               )}
             </div>
+            
+            {/* 歧义提醒 */}
+            {ambiguity && (
+              <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded-md flex items-start gap-2">
+                <IconAlertTriangle size={16} className="text-orange-500 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-orange-800">
+                  <div className="font-bold mb-0.5">{t('ambiguityTitle') || '歧义澄清'}</div>
+                  {ambiguity}
+                </div>
+              </div>
+            )}
           </div>
           <div
             className="flex flex-col"

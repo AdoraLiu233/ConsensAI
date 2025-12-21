@@ -28,6 +28,10 @@ export function InspirationCard({ inspiration, onClose }: InspirationCardProps) 
     return null;
   }
 
+  const isAmbiguity = inspiration.trigger === 'ambiguity';
+  const titleKey = isAmbiguity ? 'ambiguityTitle' : 'inspirationTitle';
+  const descKey = isAmbiguity ? 'ambiguityDescription' : 'inspirationDescription';
+
   return (
     <Modal
       opened={isOpen}
@@ -35,7 +39,7 @@ export function InspirationCard({ inspiration, onClose }: InspirationCardProps) 
       title={
         <Group gap="xs">
           <IconSparkles size={24} color="#ffd43b" />
-          <Text fw={700} size="lg">{t('inspirationTitle')}</Text>
+          <Text fw={700} size="lg">{t(titleKey)}</Text>
           <Badge color="yellow" variant="light" size="lg">
             {t('aiGenerated')}
           </Badge>
@@ -64,7 +68,7 @@ export function InspirationCard({ inspiration, onClose }: InspirationCardProps) 
       <Stack gap="md" mt="md">
         <Box>
           <Text size="sm" c="dimmed" mb="xs">
-            {t('inspirationDescription')}
+            {t(descKey)}
           </Text>
           <Card
             shadow="sm"
