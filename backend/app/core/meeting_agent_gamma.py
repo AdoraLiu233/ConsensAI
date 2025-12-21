@@ -59,6 +59,7 @@ class MeetingAgentGamma(MeetingAgent):
         # 累计字符：目前尚未被AI分析所积累的字符数
         self.acc_char_num_issue_map = 0
         self.acc_char_num_context = 0
+        self.acc_char_num_goal = 0
 
         # 文件计数
         self.issue_and_position_cnt = 0
@@ -192,8 +193,10 @@ class MeetingAgentGamma(MeetingAgent):
                 sentence = self.issue_map_queue.get_nowait()
                 if self.meeting_language == "Chinese":
                     self.acc_char_num_issue_map += len(sentence.content)
+                    self.acc_char_num_goal += len(sentence.content)
                 else:
                     self.acc_char_num_issue_map += len(sentence.content.split())
+                    self.acc_char_num_goal += len(sentence.content.split())
 
             # 如果字数超过阈值，且用户选择了节点
             if (
@@ -320,6 +323,14 @@ class MeetingAgentGamma(MeetingAgent):
                 await sio.statusAI(room, False)
 
                 # DONE： 用 processed_index 记录截止到调用上一次 agent 的对话 id (注意：这是总id，不是当前对话的id)
+
+            # Check goal alignment if goal is set and char count exceeds threshold (e.g. 20 chars)
+            if self.meeting_goal and self.acc_char_num_goal >= 20:
+                self.logger.info(f"[goal_check_trigger] {self.acc_char_num_goal=}")
+                self.acc_char_num_goal = 0
+                asyncio.create_task(
+                    self.run_goal_check(meeting_id, sio, room, attendee_manager)
+                )
 
             else:
                 await asyncio.sleep(1)
@@ -786,17 +797,18 @@ class MeetingAgentGamma(MeetingAgent):
         attendee_manager: AttendeeManager,
         meeting_manager,
     ):
-        self.logger.info("[goal_check_scheduler] start")
-        while meeting_manager.isRunning(str(meeting_id)):
-            await asyncio.sleep(45)  # Check every 45 seconds (30-60s per requirements)
-            if self.meeting_goal:
-                self.logger.info(
-                    f"[goal_check_scheduler] running check... meeting_goal={self.meeting_goal}"
-                )
-                await self.run_goal_check(meeting_id, sio, room, attendee_manager)
-            else:
-                self.logger.info("[goal_check_scheduler] no meeting goal set, skip.")
-        self.logger.info("[goal_check_scheduler] stop")
+        # Deprecated: Now using character count trigger in gamma_generate_issue_map
+        self.logger.info("[goal_check_scheduler] start (deprecated - no-op)")
+        # while meeting_manager.isRunning(str(meeting_id)):
+        #     await asyncio.sleep(45)  # Check every 45 seconds (30-60s per requirements)
+        #     if self.meeting_goal:
+        #         self.logger.info(
+        #             f"[goal_check_scheduler] running check... meeting_goal={self.meeting_goal}"
+        #         )
+        #         await self.run_goal_check(meeting_id, sio, room, attendee_manager)
+        #     else:
+        #         self.logger.info("[goal_check_scheduler] no meeting goal set, skip.")
+        # self.logger.info("[goal_check_scheduler] stop")
 
     def update_and_save_issue_map(self):
         """

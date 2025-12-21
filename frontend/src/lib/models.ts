@@ -41,6 +41,7 @@ export interface Issue {
   issue_id: number;
   positions: Position[];
   source?: Relation | null;
+  status?: ("consensus" | "controversial" | "pending") | null;
 }
 export interface Position {
   full_id: string;
@@ -53,6 +54,7 @@ export interface Position {
   note?: string | null;
   generated_issue?: boolean;
   ambiguity?: string | null;
+  status?: ("consensus" | "controversial" | "pending") | null;
   [k: string]: unknown;
 }
 export interface Argument {

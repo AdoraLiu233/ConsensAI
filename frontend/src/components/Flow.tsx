@@ -197,19 +197,61 @@ export default function Flow({ initialNodeData, isEditable }: { initialNodeData:
   const driftScore = useMeetingStore(s => s.driftScore);
   
   const getBackgroundColor = (score: number) => {
-      if (score < 30) return undefined; 
-      // sepia/orange tint for drift
-      // We can use a radial gradient or just background color.
-      // Requirement says: radial-gradient or filter: sepia.
-      // Let's use filter sepia for "Ambient" feel if possible, or just background color.
-      // Background color is safer for visibility.
-      // 30-70: Light Orange
-      // 70-100: Light Red
+      // 0-100, 0 is good, 100 is bad drift.
+      // Re-interpret score as "Correlation" might require inverting logic if backend sends "Drift Score".
+      // Assuming backend sends Drift Score (0=aligned, 100=drifted).
+      
+      if (score < 30) {
+          // High correlation / Low drift -> Normal / Slight Greenish? Or just White.
+          // Let's keep it clean white or very subtle cool color.
+          return undefined; 
+      }
+      
+      // 30-70: Medium drift -> Light Orange / Sepia
+      // 70-100: High drift -> Light Red
+      
+      // Using CSS filters might be better for "Ambient" effect on the whole container, 
+      // but ReactFlow style background color is effective too.
+      
       const intensity = (score - 30) / 70; // 0 to 1
       if (score > 70) {
-          return `rgba(255, 200, 200, ${0.1 + intensity * 0.3})`;
+          return `rgba(255, 220, 220, ${0.2 + intensity * 0.3})`; // More visible red
       }
-      return `rgba(255, 240, 200, ${0.1 + intensity * 0.3})`;
+      return `rgba(255, 245, 230, ${0.2 + intensity * 0.3})`; // Subtle orange
+  };
+
+  // Add a background text or watermark for correlation/status
+  const BackgroundStatus = () => {
+      if (driftScore < 30) return null;
+      
+      // Relevance logic:
+      // High drift (Score > 70) -> Low relevance
+      // Medium drift (30-70) -> Medium relevance
+      // Low drift (< 30) -> High relevance (but usually hidden)
+      
+      let relevanceText = "";
+      if (driftScore > 70) {
+          relevanceText = "低";
+      } else {
+          relevanceText = "中";
+      }
+      // For driftScore < 30, it returns null above, so "High" is implicit/default state (no warning).
+      
+      return (
+          <div style={{
+              position: 'absolute',
+              bottom: '20px',
+              left: '20px',
+              fontSize: '48px',
+              fontWeight: 'bold',
+              color: driftScore > 70 ? 'rgba(255, 0, 0, 0.1)' : 'rgba(255, 165, 0, 0.1)',
+              pointerEvents: 'none',
+              zIndex: 0,
+              userSelect: 'none',
+          }}>
+              {t('Relevance' as any)}: {relevanceText}
+          </div>
+      );
   };
 
   const onNodeDragStart: OnNodeDrag<CustomNodeType> = (event, node) => {
@@ -337,6 +379,7 @@ export default function Flow({ initialNodeData, isEditable }: { initialNodeData:
         {t('updateGraph')}
       </Button>}
       <Background />
+      <BackgroundStatus />
     </ReactFlow>
   );
 };

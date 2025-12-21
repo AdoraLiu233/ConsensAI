@@ -26,7 +26,7 @@ from app.deps import (
 from app.core.asr.models import AsrSentence, TotalData
 from app.core.meeting_agent_gamma import MeetingAgentGamma
 from app.core.meeting_agent_summary import MeetingAgentSummary
-from app.core.agent.models import Issue, Position
+from app.core.agent.models import Issue
 from app.models import (
     AddNodeResponse,
     Code,
@@ -459,7 +459,7 @@ async def update_position_status(
     meeting: MeetingDepPost,
     meeting_agent: MeetingAgentDep,
     full_id: Embed_Body_Str,
-    status: Annotated[
+    new_status: Annotated[
         Optional[Literal["consensus", "controversial", "pending"]],
         Body(embed=True),
     ],
@@ -474,7 +474,7 @@ async def update_position_status(
         "status": "consensus" | "controversial" | "pending" | null
     }
     """
-    logger.info(f"user update position status: {full_id} -> {status}")
+    logger.info(f"user update position status: {full_id} -> {new_status}")
 
     if isinstance(meeting_agent, MeetingAgentGamma):
         # 检查节点是否存在
@@ -482,14 +482,14 @@ async def update_position_status(
         if not position:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Position with full_id {full_id} not found"
+                detail=f"Position with full_id {full_id} not found",
             )
-        
+
         room = meeting.hash_id
         await meeting_agent.gamma_update_position_status(
-            sio=sio, room=room, full_id=str(full_id), status=status
+            sio=sio, room=room, full_id=str(full_id), status=new_status
         )
-        meeting_agent.logger.info(f"更新节点状态：{full_id} -> {status}")
+        meeting_agent.logger.info(f"更新节点状态：{full_id} -> {new_status}")
         return SuccessResponse()
     else:
         return WrongAgentResponse()
@@ -501,7 +501,7 @@ async def update_issue_status(
     meeting: MeetingDepPost,
     meeting_agent: MeetingAgentDep,
     full_id: Embed_Body_Str,
-    status: Annotated[
+    new_status: Annotated[
         Optional[Literal["consensus", "controversial", "pending"]],
         Body(embed=True),
     ],
@@ -516,7 +516,7 @@ async def update_issue_status(
         "status": "consensus" | "controversial" | "pending" | null
     }
     """
-    logger.info(f"user update issue status: {full_id} -> {status}")
+    logger.info(f"user update issue status: {full_id} -> {new_status}")
 
     if isinstance(meeting_agent, MeetingAgentGamma):
         # 检查节点是否存在
@@ -524,14 +524,14 @@ async def update_issue_status(
         if not issue:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Issue with full_id {full_id} not found"
+                detail=f"Issue with full_id {full_id} not found",
             )
-        
+
         room = meeting.hash_id
         await meeting_agent.gamma_update_issue_status(
-            sio=sio, room=room, full_id=str(full_id), status=status
+            sio=sio, room=room, full_id=str(full_id), status=new_status
         )
-        meeting_agent.logger.info(f"更新议题状态：{full_id} -> {status}")
+        meeting_agent.logger.info(f"更新议题状态：{full_id} -> {new_status}")
         return SuccessResponse()
     else:
         return WrongAgentResponse()
@@ -565,7 +565,7 @@ async def get_controversial_items(
             "items": [
                 {
                     "type": "issue" if isinstance(item, Issue) else "position",
-                    **item.model_dump()
+                    **item.model_dump(),
                 }
                 for item in items
             ]

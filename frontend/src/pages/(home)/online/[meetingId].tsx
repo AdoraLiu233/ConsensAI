@@ -23,7 +23,6 @@ import { useTranslation } from "react-i18next";
 import { SilenceTimer } from "@/components/SilenceTimer";
 import { InspirationCard } from "@/components/InspirationCard";
 import { GoalPanel } from "@/components/GoalPanel";
-import { GoalIntervention } from "@/components/GoalIntervention";
 import { ControversialItemsPanel } from "@/components/ControversialItemsPanel";
 
 
@@ -369,18 +368,41 @@ export default function OnlineMeeting() {
             {/* 导图/文档 */}
             <Flex direction='column' style={{ width: "100%", position: 'relative' }}>
                 {meetingTypeGraph && <GoalPanel />}
+                {/* 偏题提示改为背景色变化和下方相关度显示，这里只保留严重偏题时的简单文字提示在顶部 */}
                 {meetingTypeGraph && driftScore > 70 && (
-                    <GoalIntervention
-                        reason={driftReason}
-                        intervention={driftIntervention}
-                        onLocate={() => {
-                            // Logic to locate goal node. For now, we can just log or maybe trigger a fitView on ID 1 if possible.
-                            // Since Flow is a child, we might need a context or event bus.
-                            // Or just ignore the locate action for this MVP step if too complex to wire up.
-                            console.log("Locate goal node");
-                        }}
-                        onClose={() => setDriftInfo(0, "", "")}
-                    />
+                     <div style={{
+                         position: 'absolute',
+                         top: '100px', // 从 10px 调整到 100px，避开顶部的 GoalPanel
+                         left: '50%',
+                         transform: 'translateX(-50%)',
+                         zIndex: 10,
+                         backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                         padding: '12px 20px',
+                         borderRadius: '12px',
+                         border: '1px solid #ffc9c9',
+                         color: '#e03131',
+                         fontWeight: 500,
+                         pointerEvents: 'none',
+                         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                         transition: 'opacity 0.5s ease',
+                         display: 'flex',
+                         flexDirection: 'column',
+                         alignItems: 'flex-start',
+                         gap: '4px',
+                         maxWidth: '80%',
+                         textAlign: 'left'
+                     }}>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                             <span style={{ fontSize: '1.2em' }}>⚠️</span>
+                             <span style={{ fontWeight: 700 }}>{t('Goal Drift Warning' as any)}</span>
+                         </div>
+                         <div style={{ fontSize: '0.9em', color: '#495057', display: driftReason ? 'block' : 'none' }}>
+                             <span style={{ fontWeight: 600 }}>{t('Reason' as any) || '原因'}:</span> {driftReason}
+                         </div>
+                         <div style={{ fontSize: '0.9em', color: '#495057', display: driftIntervention ? 'block' : 'none' }}>
+                             <span style={{ fontWeight: 600 }}>{t('Suggestion' as any)}:</span> {driftIntervention}
+                         </div>
+                     </div>
                 )}
                 {meetingTypeGraph && (
                     <Group px="md" py="xs" style={{ borderBottom: '1px solid #e0e0e0', backgroundColor: '#f8f9fa' }}>

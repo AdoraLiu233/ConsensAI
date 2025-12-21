@@ -48,7 +48,11 @@ class ParsedIssue(BaseModel):
         except (ValueError, IndexError):
             return None
 
-    def update_position_status(self, full_id: str, status: Optional[Literal["consensus", "controversial", "pending"]]) -> bool:
+    def update_position_status(
+        self,
+        full_id: str,
+        status: Optional[Literal["consensus", "controversial", "pending"]],
+    ) -> bool:
         """
         更新 Position 节点的状态
         """
@@ -68,7 +72,11 @@ class ParsedIssue(BaseModel):
             return True
         return False
 
-    def update_issue_status(self, full_id: str, status: Optional[Literal["consensus", "controversial", "pending"]]) -> bool:
+    def update_issue_status(
+        self,
+        full_id: str,
+        status: Optional[Literal["consensus", "controversial", "pending"]],
+    ) -> bool:
         """
         更新 Issue 节点的状态
         """

@@ -16,10 +16,10 @@ from pydantic_settings import (
 # Custom YAML settings source that uses UTF-8 encoding
 class Utf8YamlConfigSettingsSource(YamlConfigSettingsSource):
     """YAML config settings source that explicitly uses UTF-8 encoding."""
-    
+
     def _read_file(self, file_path: Path) -> dict:
         """Read YAML file with UTF-8 encoding."""
-        with open(file_path, 'r', encoding='utf-8') as yaml_file:
+        with open(file_path, "r", encoding="utf-8") as yaml_file:
             return yaml.safe_load(yaml_file) or {}
 
 
@@ -49,7 +49,9 @@ class YamlBaseSettings(BaseSettings):
         init_yaml_file = init_settings.init_kwargs.get("yaml_file")
         if init_yaml_file:
             # if the init_settings has a `yaml_file`, use it
-            return (Utf8YamlConfigSettingsSource(settings_cls, yaml_file=init_yaml_file),)
+            return (
+                Utf8YamlConfigSettingsSource(settings_cls, yaml_file=init_yaml_file),
+            )
         else:
             # otherwise, use the default searched configuration file
             return (Utf8YamlConfigSettingsSource(settings_cls),)

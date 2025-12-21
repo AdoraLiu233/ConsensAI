@@ -161,6 +161,20 @@ export type BodyMeetingsEndMeeting = {
 };
 
 /**
+ * Body_meetings-get_controversial_items
+ */
+export type BodyMeetingsGetControversialItems = {
+    /**
+     * Meeting Id
+     */
+    meeting_id?: string | null;
+    /**
+     * Meeting Hash Id
+     */
+    meeting_hash_id?: string | null;
+};
+
+/**
  * Body_meetings-join_meeting
  */
 export type BodyMeetingsJoinMeeting = {
@@ -311,6 +325,50 @@ export type BodyMeetingsUpdateHotWords = {
 };
 
 /**
+ * Body_meetings-update_issue_status
+ */
+export type BodyMeetingsUpdateIssueStatus = {
+    /**
+     * Full Id
+     */
+    full_id: string;
+    /**
+     * New Status
+     */
+    new_status: ('consensus' | 'controversial' | 'pending') | null;
+    /**
+     * Meeting Id
+     */
+    meeting_id?: string | null;
+    /**
+     * Meeting Hash Id
+     */
+    meeting_hash_id?: string | null;
+};
+
+/**
+ * Body_meetings-update_position_status
+ */
+export type BodyMeetingsUpdatePositionStatus = {
+    /**
+     * Full Id
+     */
+    full_id: string;
+    /**
+     * New Status
+     */
+    new_status: ('consensus' | 'controversial' | 'pending') | null;
+    /**
+     * Meeting Id
+     */
+    meeting_id?: string | null;
+    /**
+     * Meeting Hash Id
+     */
+    meeting_hash_id?: string | null;
+};
+
+/**
  * Body_users-login_for_access_token
  */
 export type BodyUsersLoginForAccessToken = {
@@ -390,6 +448,10 @@ export type Issue = {
      */
     positions: Array<Position>;
     source?: Relation | null;
+    /**
+     * Status
+     */
+    status?: ('consensus' | 'controversial' | 'pending') | null;
 };
 
 /**
@@ -599,6 +661,10 @@ export type Position = {
      * Generated Issue
      */
     generated_issue?: boolean;
+    /**
+     * Status
+     */
+    status?: ('consensus' | 'controversial' | 'pending') | null;
 };
 
 /**
@@ -1185,6 +1251,86 @@ export type MeetingsAddNodeResponses = {
 };
 
 export type MeetingsAddNodeResponse = MeetingsAddNodeResponses[keyof MeetingsAddNodeResponses];
+
+export type MeetingsUpdatePositionStatusData = {
+    body: BodyMeetingsUpdatePositionStatus;
+    path?: never;
+    query?: never;
+    url: '/api/updatePositionStatus';
+};
+
+export type MeetingsUpdatePositionStatusErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type MeetingsUpdatePositionStatusError = MeetingsUpdatePositionStatusErrors[keyof MeetingsUpdatePositionStatusErrors];
+
+export type MeetingsUpdatePositionStatusResponses = {
+    /**
+     * Response Meetings-Update Position Status
+     * Successful Response
+     */
+    200: SuccessResponse | WrongAgentResponse;
+};
+
+export type MeetingsUpdatePositionStatusResponse = MeetingsUpdatePositionStatusResponses[keyof MeetingsUpdatePositionStatusResponses];
+
+export type MeetingsUpdateIssueStatusData = {
+    body: BodyMeetingsUpdateIssueStatus;
+    path?: never;
+    query?: never;
+    url: '/api/updateIssueStatus';
+};
+
+export type MeetingsUpdateIssueStatusErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type MeetingsUpdateIssueStatusError = MeetingsUpdateIssueStatusErrors[keyof MeetingsUpdateIssueStatusErrors];
+
+export type MeetingsUpdateIssueStatusResponses = {
+    /**
+     * Response Meetings-Update Issue Status
+     * Successful Response
+     */
+    200: SuccessResponse | WrongAgentResponse;
+};
+
+export type MeetingsUpdateIssueStatusResponse = MeetingsUpdateIssueStatusResponses[keyof MeetingsUpdateIssueStatusResponses];
+
+export type MeetingsGetControversialItemsData = {
+    body?: BodyMeetingsGetControversialItems;
+    path?: never;
+    query?: never;
+    url: '/api/getControversialItems';
+};
+
+export type MeetingsGetControversialItemsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type MeetingsGetControversialItemsError = MeetingsGetControversialItemsErrors[keyof MeetingsGetControversialItemsErrors];
+
+export type MeetingsGetControversialItemsResponses = {
+    /**
+     * Response Meetings-Get Controversial Items
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    } | WrongAgentResponse;
+};
+
+export type MeetingsGetControversialItemsResponse = MeetingsGetControversialItemsResponses[keyof MeetingsGetControversialItemsResponses];
 
 export type MeetingsDeleteNodeData = {
     body: BodyMeetingsDeleteNode;
