@@ -30,12 +30,26 @@ export default function MeetingRecord() {
     const params = useParams();
     const { data: initialAsrData } = useSuspenseQuery(meetingsRequestRecordOptions({ body: { meeting_id: params.recordId } }))
 
+    // 转换 TotalData 为 SendAsrData，补充缺失的字段
+    const convertToSendAsrData = (data: typeof initialAsrData): SendAsrData => {
+        return {
+            speaker: data.speaker,
+            sentences: data.sentences.map((sentence, index) => ({
+                id: (sentence as any).id || `sentence-${index}`,
+                content: sentence.content,
+                time_range: sentence.time_range,
+                speaker_id: sentence.speaker_id,
+                is_final: (sentence as any).is_final ?? true,
+            })),
+        };
+    };
+
     const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);//左侧边栏缩放
     // 渲染从Loader获取的初始转写数据
-    const [onlineTransData, setOnlineTransData] = useState<SendAsrData>(initialAsrData);  //实时转写数据
+    const [onlineTransData, setOnlineTransData] = useState<SendAsrData>(convertToSendAsrData(initialAsrData));  //实时转写数据
     // 监听 initialAsrData 变化，同步 onlineTransData
     useValueChange((newInitialAsrData) => {
-        setOnlineTransData(newInitialAsrData);
+        setOnlineTransData(convertToSendAsrData(newInitialAsrData));
     }, initialAsrData);
 
     const theme = useMantineTheme();

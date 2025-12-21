@@ -94,5 +94,17 @@
     "Goal Drift Warning": "目标偏离预警",
     "Suggestion": "纠偏建议",
     "Dismiss": "忽略",
-    "Focus Goal": "聚焦目标"
+    "Focus Goal": "聚焦目标",
+    "statusConsensus": "达成共识",
+    "statusControversial": "存在分歧",
+    "statusPending": "待延展",
+    "clearStatus": "清除状态",
+    "statusUpdateSuccess": "状态更新成功",
+    "updateError": "更新失败",
+    "error": "错误",
+    "meetingHashIdMissing": "会议号缺失",
+    "controversialItemsLibrary": "问题库",
+    "refresh": "刷新",
+    "loading": "加载中...",
+    "noControversialItems": "暂无存在分歧的议题或观点"
 }
