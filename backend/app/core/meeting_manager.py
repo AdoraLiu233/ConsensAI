@@ -386,7 +386,7 @@ class MeetingManager:
             data = SendAsrData(speaker=speaker, sentences=result)
             await sio.sendCurrent(room, data)  # 向所有room内客户端广播
             await meeting_recorder.step()  # 将current_asr加入total_asr
-            
+
             # Only process FINAL sentences for agent to avoid duplicates
             final_sentences = [s for s in result if s.is_final]
             if final_sentences:

@@ -45,6 +45,10 @@ export type Argument = {
  */
 export type AsrSentence = {
     /**
+     * Id
+     */
+    id?: string;
+    /**
      * Content
      */
     content: string;
@@ -56,6 +60,10 @@ export type AsrSentence = {
      * Speaker Id
      */
     speaker_id: string;
+    /**
+     * Is Final
+     */
+    is_final?: boolean;
 };
 
 /**
@@ -256,6 +264,24 @@ export type BodyMeetingsSendUserSummary = {
      * Edit History
      */
     edit_history: Array<unknown>;
+    /**
+     * Meeting Id
+     */
+    meeting_id?: string | null;
+    /**
+     * Meeting Hash Id
+     */
+    meeting_hash_id?: string | null;
+};
+
+/**
+ * Body_meetings-set_goal
+ */
+export type BodyMeetingsSetGoal = {
+    /**
+     * Goal
+     */
+    goal: string;
     /**
      * Meeting Id
      */
@@ -1055,6 +1081,32 @@ export type MeetingsManualUpdateResponses = {
 };
 
 export type MeetingsManualUpdateResponse = MeetingsManualUpdateResponses[keyof MeetingsManualUpdateResponses];
+
+export type MeetingsSetGoalData = {
+    body: BodyMeetingsSetGoal;
+    path?: never;
+    query?: never;
+    url: '/api/setGoal';
+};
+
+export type MeetingsSetGoalErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type MeetingsSetGoalError = MeetingsSetGoalErrors[keyof MeetingsSetGoalErrors];
+
+export type MeetingsSetGoalResponses = {
+    /**
+     * Response Meetings-Set Goal
+     * Successful Response
+     */
+    200: SuccessResponse | WrongAgentResponse;
+};
+
+export type MeetingsSetGoalResponse = MeetingsSetGoalResponses[keyof MeetingsSetGoalResponses];
 
 export type MeetingsChooseNodeData = {
     body: BodyMeetingsChooseNode;
