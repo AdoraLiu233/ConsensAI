@@ -1,8 +1,10 @@
-import { Button, SegmentedControl, Select, Text, TextInput } from '@mantine/core';
+import { Button, SegmentedControl, Select, Text, TextInput, Group } from '@mantine/core';
 import { TagsInput } from '@mantine/core';
 import { useMeeting } from "@/hooks/useMeeting";
 import { useTranslation } from "react-i18next";
 import { isNotEmpty, useForm } from "@mantine/form";
+import { useState } from "react";
+import { OutlineGenerator } from "@/components/OutlineGenerator";
 
 
 export function Loader() {
@@ -16,6 +18,7 @@ export function Loader() {
 export default function Start() {
   const { startMeeting } = useMeeting();
   const { t } = useTranslation();
+  const [outlineModalOpened, setOutlineModalOpened] = useState(false);
 
   const form = useForm({
     initialValues: {
@@ -44,13 +47,35 @@ export default function Start() {
     });
   };
 
+  const handleOutlineGenerated = (outline: { topic: string; objectives: string; directions: string; totalDuration: number }) => {
+    form.setFieldValue('topic', outline.topic);
+    // You can also use objectives and directions to populate hotwords or other fields if needed
+  };
+
   return (
-    <form onSubmit={form.onSubmit(onSubmit)}>
-      <TextInput label={t('topic')} placeholder={t('topicPlaceholder')}
-        withAsterisk
-        key={form.key('topic')}
-        {...form.getInputProps('topic')}
+    <>
+      <OutlineGenerator
+        opened={outlineModalOpened}
+        onClose={() => setOutlineModalOpened(false)}
+        onOutlineGenerated={handleOutlineGenerated}
       />
+      <form onSubmit={form.onSubmit(onSubmit)}>
+        <TextInput 
+          label={t('topic')} 
+          placeholder={t('topicPlaceholder')}
+          withAsterisk
+          key={form.key('topic')}
+          {...form.getInputProps('topic')}
+        />
+        <Button
+          variant="light"
+          color="blue"
+          fullWidth
+          mt="md"
+          onClick={() => setOutlineModalOpened(true)}
+        >
+          {t('generateOutline') || "Generate Outline"}
+        </Button>
       <TextInput label={t('nickName')} placeholder={t('nickNamePlaceholder')} mt="md"
         withAsterisk
         key={form.key('nickname')}
@@ -104,5 +129,6 @@ export default function Start() {
         type='submit'
       >{t('startDiscussion')}</Button>
     </form>
+    </>
   );
 };

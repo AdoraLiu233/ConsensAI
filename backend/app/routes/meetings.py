@@ -29,6 +29,8 @@ from app.core.meeting_agent_summary import MeetingAgentSummary
 from app.models import (
     AddNodeResponse,
     Code,
+    DiscussionOutlineRequest,
+    DiscussionOutlineResponse,
     InvalidNodeResponse,
     MeetingItem,
     MeetingJoinResponse,
@@ -38,11 +40,17 @@ from app.models import (
     MeetingStartResponse,
     MeetingStopResponse,
     NotMeetingHostResponse,
+    OutlineSection,
     SuccessResponse,
     WrongAgentResponse,
 )
 from app.utils.log import get_logger
 from app.core.util import get_max_numbered_parsed_issues
+from app.config import settings
+from handyllm import OpenAIClient, load_from, ChatPrompt, VM
+from app.core.agent.constants import PROMPT_ROOT_AUTODOC
+from app.core.agent.utils import extract_xml_tag
+import xml.etree.ElementTree as ET
 
 
 api_router = APIRouter()
@@ -686,3 +694,109 @@ async def get_audio(
         headers=headers,
         media_type=f"audio/{audio_type}",
     )
+
+
+# 生成讨论提纲
+@api_router.post("/api/generateOutline")
+async def generate_outline(
+    data: DiscussionOutlineRequest,
+    user: UserDep,
+) -> DiscussionOutlineResponse:
+    """
+    Generate a discussion outline based on topic, objectives, directions, and total duration.
+    """
+    logger.info(f"Generating outline for topic: {data.topic}")
+    
+    # Load the prompt template
+    prompt_outline = load_from(PROMPT_ROOT_AUTODOC / "outline.hprompt", cls=ChatPrompt)
+    
+    # Create OpenAI client
+    client = OpenAIClient(
+        "async", endpoints=[model.model_dump() for model in settings.endpoints]
+    )
+    
+    try:
+        # Prepare the prompt
+        p_evaled = prompt_outline.eval(
+            var_map=VM(
+                topic=data.topic,
+                objectives=data.objectives,
+                directions=data.directions,
+                total_duration_minutes=str(data.total_duration_minutes),
+                meeting_language=data.meeting_language,
+            ),
+        )
+        p_evaled.run_config.credential_path = None  # Override credential_path
+        
+        # Run the prompt
+        result_prompt = await p_evaled.arun(client=client, timeout=60)
+        
+        # Extract the outline XML
+        outline_xml = extract_xml_tag(result_prompt.result_str, "outline")
+        
+        # Parse the XML
+        root = ET.fromstring(f"<root>{outline_xml}</root>")
+        
+        # Extract overview
+        overview_elem = root.find("overview")
+        overview = overview_elem.text.strip() if overview_elem is not None and overview_elem.text else ""
+        
+        # Extract sections
+        sections = []
+        sections_elem = root.find("sections")
+        if sections_elem is not None:
+            for section_elem in sections_elem.findall("section"):
+                name_elem = section_elem.find("name")
+                duration_elem = section_elem.find("duration_minutes")
+                desc_elem = section_elem.find("description")
+                key_points_elem = section_elem.find("key_points")
+                
+                name = name_elem.text.strip() if name_elem is not None and name_elem.text else ""
+                duration = int(duration_elem.text.strip()) if duration_elem is not None and duration_elem.text else 0
+                description = desc_elem.text.strip() if desc_elem is not None and desc_elem.text else ""
+                
+                key_points = []
+                if key_points_elem is not None:
+                    # Try to find list items first
+                    list_items = key_points_elem.findall(".//li")
+                    if list_items:
+                        for item in list_items:
+                            text = item.text.strip() if item.text else ""
+                            if text:
+                                key_points.append(text)
+                    else:
+                        # If no list items, parse as plain text
+                        text = key_points_elem.text.strip() if key_points_elem.text else ""
+                        if text:
+                            # Try to split by newlines and process each line
+                            for line in text.split("\n"):
+                                line = line.strip()
+                                if line.startswith("-"):
+                                    key_points.append(line[1:].strip())
+                                elif line:
+                                    key_points.append(line)
+                
+                sections.append(OutlineSection(
+                    name=name,
+                    duration_minutes=duration,
+                    description=description,
+                    key_points=key_points,
+                ))
+        
+        # Extract total duration
+        total_duration_elem = root.find("total_duration_minutes")
+        total_duration = int(total_duration_elem.text.strip()) if total_duration_elem is not None and total_duration_elem.text else data.total_duration_minutes
+        
+        return DiscussionOutlineResponse(
+            overview=overview,
+            sections=sections,
+            total_duration_minutes=total_duration,
+        )
+    except Exception as e:
+        logger.error(f"Error generating outline: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate outline: {str(e)}"
+        )
+    finally:
+        client.close()

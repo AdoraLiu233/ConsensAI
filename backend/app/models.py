@@ -145,6 +145,42 @@ class MeetingListResponse(BaseResponse):
     total: int
 
 
+class DiscussionOutlineRequest(AnnotatedModel):
+    """Request model for generating discussion outline"""
+    topic: str
+    """Discussion topic"""
+    objectives: str
+    """Discussion objectives"""
+    directions: str
+    """Discussion directions/guidelines"""
+    total_duration_minutes: int
+    """Total duration in minutes"""
+    meeting_language: MeetingLanguageType
+    """Language for the discussion outline"""
+
+
+class OutlineSection(AnnotatedModel):
+    """A section in the discussion outline"""
+    name: str
+    """Section name"""
+    duration_minutes: int
+    """Duration in minutes"""
+    description: str
+    """Detailed description"""
+    key_points: List[str]
+    """Key points to discuss in this section"""
+
+
+class DiscussionOutlineResponse(SuccessResponse):
+    """Response model for discussion outline"""
+    overview: str
+    """Brief overview of the discussion"""
+    sections: List[OutlineSection]
+    """List of discussion sections"""
+    total_duration_minutes: int
+    """Total duration in minutes"""
+
+
 # Blow are database models
 
 
