@@ -17,7 +17,7 @@ interface ListenEvents {
   statusAI: (d: ProcessStatus) => void;
   sendSummaryNew: (d: AllSummaries) => void;
   sendInspiration: (d: InspirationData) => void;
-  updateDrift: (data: { drift_score: number; reason: string; intervention: string }) => void;
+  updateDrift: (data: { relevance: 'High' | 'Medium' | 'Low'; hint: string }) => void;
 }
 
 

@@ -665,6 +665,10 @@ export type Position = {
      * Status
      */
     status?: ('consensus' | 'controversial' | 'pending') | null;
+    /**
+     * Ambiguity
+     */
+    ambiguity?: string | null;
 };
 
 /**

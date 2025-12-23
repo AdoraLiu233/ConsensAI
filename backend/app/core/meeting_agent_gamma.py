@@ -247,16 +247,20 @@ class MeetingAgentGamma(MeetingAgent):
                         # 实际上 text_to_position 返回的是 parsed_new_positions (字典列表)
                         # 但是 add_new_positions 返回的是 Position 对象列表 (p2i_postions)
                         # 我们需要修改 text_to_position 让它返回 Position 对象列表
-                        
+
                         # 修正：text_to_position 返回的是 (is_edited, parsed_new_positions)
                         # parsed_new_positions 是字典列表 [{'order_id': '1.1', ...}]
                         # 我们需要的是已经添加到 parsed_issues_new 中的 Position 对象
                         # 但是 text_to_position 内部调用了 add_new_positions，它返回了 Position 对象列表
                         # 所以我们应该让 text_to_position 返回这个列表
-                        
+
                         new_position_ids = [p.full_id for p in new_positions]
                         await self.check_ambiguity(
-                            meeting_id, sio, room, attendee_manager, target_position_ids=new_position_ids
+                            meeting_id,
+                            sio,
+                            room,
+                            attendee_manager,
+                            target_position_ids=new_position_ids,
                         )
 
                 except Exception as e:
@@ -644,6 +648,7 @@ class MeetingAgentGamma(MeetingAgent):
         target_position_ids: List[str] = [],
     ):
         import json
+
         speaker = attendee_manager.get_speaker_map(meeting_id)
         # Get recent dialog (last 10 sentences)
         recent_sentences = self.sentences[-10:]
@@ -658,11 +663,8 @@ class MeetingAgentGamma(MeetingAgent):
             for pid in target_position_ids:
                 pos = self.parsed_issues_new.get_position_by_full_id(pid)
                 if pos:
-                    positions_data.append({
-                        "id": pos.full_id,
-                        "content": pos.content
-                    })
-        
+                    positions_data.append({"id": pos.full_id, "content": pos.content})
+
         if not positions_data:
             return
 
@@ -685,9 +687,9 @@ class MeetingAgentGamma(MeetingAgent):
                 json_str = json_str.split("```json")[1].split("```")[0].strip()
             elif "```" in json_str:
                 json_str = json_str.split("```")[1].split("```")[0].strip()
-            
+
             ambiguity_map = json.loads(json_str)
-            
+
             has_update = False
             for pid, data in ambiguity_map.items():
                 # data is {"score": int, "question": str}
@@ -702,17 +704,21 @@ class MeetingAgentGamma(MeetingAgent):
                 if score >= 7 and question and question != "None":
                     pos = self.parsed_issues_new.get_position_by_full_id(pid)
                     if pos:
-                        self.logger.info(f"[ambiguity_detected] {pid} (score={score}): {question}")
+                        self.logger.info(
+                            f"[ambiguity_detected] {pid} (score={score}): {question}"
+                        )
                         pos.ambiguity = question
                         has_update = True
-            
+
             if has_update:
                 # 推送更新后的 Issue Map
                 self.update_and_save_issue_map()
                 await self.gamma_send_issue_map(sio, room)
 
         except Exception as e:
-            self.logger.warning(f"[check_ambiguity_error] Failed to parse JSON: {result}. Error: {e}")
+            self.logger.warning(
+                f"[check_ambiguity_error] Failed to parse JSON: {result}. Error: {e}"
+            )
 
     def set_meeting_goal(self, goal: str):
         self.meeting_goal = goal
@@ -737,8 +743,10 @@ class MeetingAgentGamma(MeetingAgent):
         # Using simple heuristic: last 20 sentences
         recent_sentences = self.sentences[-20:]
         recent_dialog = parse_sentences_to_dialog(recent_sentences, speaker)
-        
-        self.logger.info(f"[goal_check_context] cnt={current_cnt} dialog_len={len(recent_dialog)} dialog_preview={recent_dialog[:100]}")
+
+        self.logger.info(
+            f"[goal_check_context] cnt={current_cnt} dialog_len={len(recent_dialog)} dialog_preview={recent_dialog[:100]}"
+        )
 
         # Get current map context (core issues)
         # Just dumping the map might be too large.
@@ -751,9 +759,13 @@ class MeetingAgentGamma(MeetingAgent):
         focused_issue = ""
         if int(self.chosen_node) > 0:
             try:
-                focused_issue = self.parsed_issues_new.parsed_issue[int(self.chosen_node) - 1].content
+                focused_issue = self.parsed_issues_new.parsed_issue[
+                    int(self.chosen_node) - 1
+                ].content
             except IndexError:
-                self.logger.warning(f"Chosen node {self.chosen_node} not found in parsed issues.")
+                self.logger.warning(
+                    f"Chosen node {self.chosen_node} not found in parsed issues."
+                )
 
         # Use timestamp to avoid reading stale cache from previous server runs
         timestamp = int(time.time())

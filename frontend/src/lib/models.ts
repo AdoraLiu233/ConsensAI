@@ -53,8 +53,8 @@ export interface Position {
   cons: Argument[];
   note?: string | null;
   generated_issue?: boolean;
-  ambiguity?: string | null;
   status?: ("consensus" | "controversial" | "pending") | null;
+  ambiguity?: string | null;
   [k: string]: unknown;
 }
 export interface Argument {

@@ -370,9 +370,9 @@ export default function OnlineMeeting() {
                 {meetingTypeGraph && <GoalPanel />}
                 {meetingTypeGraph && (
                     <Group px="md" py="xs" style={{ borderBottom: '1px solid #e0e0e0', backgroundColor: '#f8f9fa', justifyContent: 'flex-end' }}>
-                        <Button 
+                        <Button
                             variant={controversialPanelOpened ? "filled" : "light"}
-                            color="red" 
+                            color="red"
                             size="sm"
                             leftSection={<span>📋</span>}
                             onClick={() => setControversialPanelOpened(!controversialPanelOpened)}

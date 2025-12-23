@@ -15,9 +15,7 @@ prompt_heuristic = load_from(PROMPT_ROOT_ECHOMIND / "heuristic.hprompt", cls=Cha
 prompt_goal_alignment = load_from(
     PROMPT_ROOT_ECHOMIND / "goal_alignment.hprompt", cls=ChatPrompt
 )
-prompt_ambiguity = load_from(
-    PROMPT_ROOT_ECHOMIND / "ambiguity.hprompt", cls=ChatPrompt
-)
+prompt_ambiguity = load_from(PROMPT_ROOT_ECHOMIND / "ambiguity.hprompt", cls=ChatPrompt)
 
 prompt_summary = load_from(PROMPT_ROOT_AUTODOC / "summary.hprompt", cls=ChatPrompt)
 
@@ -291,4 +289,3 @@ class AgentRealtime:
         result_prompt = await p_evaled.arun(client=self.client, timeout=20)
         logger.info(f"[prompt_ambiguity_out] {cnt} {output_path=}")
         return result_prompt.result_str
-
