@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 export function GoalPanel() {
   const { t } = useTranslation();
-  const { meetingGoal, setMeetingGoal, meetingHashId, isHost } = useMeetingStore();
+  const { meetingGoal, setMeetingGoal, meetingHashId, isHost, driftRelevance, driftHint } = useMeetingStore();
   const [localGoal, setLocalGoal] = useState(meetingGoal);
   const [active, setActive] = useState(!!meetingGoal);
 
@@ -62,17 +62,29 @@ export function GoalPanel() {
     }
   };
 
+  const getStatusColor = () => {
+    switch (driftRelevance) {
+      case 'High': return { border: '#2b8a3e', text: '#2b8a3e' }; // Green
+      case 'Medium': return { border: '#f08c00', text: '#f08c00' }; // Yellow/Orange
+      case 'Low': return { border: '#e03131', text: '#e03131' }; // Red
+      default: return { border: '#dee2e6', text: '#495057' }; // Gray
+    }
+  };
+  const statusColors = getStatusColor();
+
   // Only show if host or if there is a goal set
   if (!isHost && !meetingGoal) return null;
 
   return (
     <Paper shadow="sm" p="sm" radius="md" withBorder className="goal-panel" style={{
       position: 'absolute',
-      top: 60,
+      top: 10,
       left: 10,
       zIndex: 90,
       width: 300,
-      backgroundColor: 'rgba(255, 255, 255, 0.95)'
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: driftRelevance ? statusColors.border : undefined,
+      borderWidth: driftRelevance ? 2 : 1,
     }}>
       <Group justify="space-between" mb={active ? 5 : 0}>
         <Text size="sm" fw={700}>🎯 {t('Goal Compass' as any)}</Text>
@@ -90,6 +102,19 @@ export function GoalPanel() {
           size="xs"
           styles={{ input: { transition: 'all 0.2s' } }}
         />
+        
+        {driftRelevance && (
+          <div style={{ marginTop: 8 }}>
+             <Text size="sm" fw={700} c={statusColors.text}>
+                {t('Relevance' as any)}: {driftRelevance}
+             </Text>
+             {(driftRelevance === 'Medium' || driftRelevance === 'Low') && driftHint && (
+                <Text size="xs" c="dimmed" mt={4} style={{ lineHeight: 1.4 }}>
+                  💡 {driftHint}
+                </Text>
+             )}
+          </div>
+        )}
       </Collapse>
     </Paper>
   );

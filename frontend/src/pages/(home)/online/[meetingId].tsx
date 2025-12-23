@@ -82,8 +82,8 @@ export default function OnlineMeeting() {
         leaveMeeting, endMeeting, changeTitle: execChangeTitle,
     } = useMeeting();
 
-    const [setMeeting, meetingHashId, title, hotWords, isHost, meetingType, setHeaderContent, driftScore, driftReason, driftIntervention, setDriftInfo] = useMeetingStore(
-        useShallow((s) => [s.setMeeting, s.meetingHashId, s.topic, s.hotwords, s.isHost, s.type, s.setHeaderContent, s.driftScore, s.driftReason, s.driftIntervention, s.setDriftInfo])
+    const [setMeeting, meetingHashId, title, hotWords, isHost, meetingType, setHeaderContent, driftRelevance, driftHint, setDriftInfo] = useMeetingStore(
+        useShallow((s) => [s.setMeeting, s.meetingHashId, s.topic, s.hotwords, s.isHost, s.type, s.setHeaderContent, s.driftRelevance, s.driftHint, s.setDriftInfo])
     );
     const meetingTypeGraph = (meetingType === 'graph');
     const setTitle = useCallback((title: string) => setMeeting({ topic: title }), [setMeeting]);
@@ -226,9 +226,9 @@ export default function OnlineMeeting() {
         setCurrentInspiration(data);
     }, []));
 
-    useSocket('updateDrift', useCallback((data: { drift_score: number; reason: string; intervention: string }) => {
+    useSocket('updateDrift', useCallback((data: { relevance: 'High' | 'Medium' | 'Low'; hint: string }) => {
         console.log("updateDrift", data);
-        setDriftInfo(data.drift_score, data.reason, data.intervention);
+        setDriftInfo(data.relevance, data.hint);
     }, [setDriftInfo]));
 
     // ---------- socket related end ----------
@@ -368,44 +368,8 @@ export default function OnlineMeeting() {
             {/* 导图/文档 */}
             <Flex direction='column' style={{ width: "100%", position: 'relative' }}>
                 {meetingTypeGraph && <GoalPanel />}
-                {/* 偏题提示改为背景色变化和下方相关度显示，这里只保留严重偏题时的简单文字提示在顶部 */}
-                {meetingTypeGraph && driftScore > 70 && (
-                     <div style={{
-                         position: 'absolute',
-                         top: '100px', // 从 10px 调整到 100px，避开顶部的 GoalPanel
-                         left: '50%',
-                         transform: 'translateX(-50%)',
-                         zIndex: 10,
-                         backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                         padding: '12px 20px',
-                         borderRadius: '12px',
-                         border: '1px solid #ffc9c9',
-                         color: '#e03131',
-                         fontWeight: 500,
-                         pointerEvents: 'none',
-                         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                         transition: 'opacity 0.5s ease',
-                         display: 'flex',
-                         flexDirection: 'column',
-                         alignItems: 'flex-start',
-                         gap: '4px',
-                         maxWidth: '80%',
-                         textAlign: 'left'
-                     }}>
-                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-                             <span style={{ fontSize: '1.2em' }}>⚠️</span>
-                             <span style={{ fontWeight: 700 }}>{t('Goal Drift Warning' as any)}</span>
-                         </div>
-                         <div style={{ fontSize: '0.9em', color: '#495057', display: driftReason ? 'block' : 'none' }}>
-                             <span style={{ fontWeight: 600 }}>{t('Reason' as any) || '原因'}:</span> {driftReason}
-                         </div>
-                         <div style={{ fontSize: '0.9em', color: '#495057', display: driftIntervention ? 'block' : 'none' }}>
-                             <span style={{ fontWeight: 600 }}>{t('Suggestion' as any)}:</span> {driftIntervention}
-                         </div>
-                     </div>
-                )}
                 {meetingTypeGraph && (
-                    <Group px="md" py="xs" style={{ borderBottom: '1px solid #e0e0e0', backgroundColor: '#f8f9fa' }}>
+                    <Group px="md" py="xs" style={{ borderBottom: '1px solid #e0e0e0', backgroundColor: '#f8f9fa', justifyContent: 'flex-end' }}>
                         <Button 
                             variant={controversialPanelOpened ? "filled" : "light"}
                             color="red" 

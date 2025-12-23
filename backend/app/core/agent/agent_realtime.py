@@ -216,6 +216,7 @@ class AgentRealtime:
         current_goal: str,
         recent_dialog: str,
         current_map_context: str,
+        focused_issue: str,
         cnt: int,
         logger: logging.Logger,
         file_suffix: str,
@@ -238,6 +239,7 @@ class AgentRealtime:
                 currentGoal=current_goal,
                 recentDialog=recent_dialog,
                 currentMapContext=current_map_context,
+                focusedIssue=focused_issue,
             ),
             run_config=RunConfig(
                 output_path=output_path,
@@ -247,7 +249,7 @@ class AgentRealtime:
         p_evaled.run_config.credential_path = None
         logger.info(f"[prompt_goal_in] {cnt} {output_evaled_prompt_path=}")
         logger.info(
-            f"[prompt_goal_content] currentGoal={current_goal} recentDialog={recent_dialog} currentMapContext={current_map_context}"
+            f"[prompt_goal_content] currentGoal={current_goal} recentDialog={recent_dialog} currentMapContext={current_map_context} focusedIssue={focused_issue}"
         )
         result_prompt = await p_evaled.arun(client=self.client, timeout=20)
         logger.info(f"[prompt_goal_out] {cnt} {output_path=}")

@@ -728,11 +728,17 @@ class MeetingAgentGamma(MeetingAgent):
         if not self.meeting_goal:
             return
 
+        # Increment count immediately to avoid race conditions and ensure unique ID for this run
+        current_cnt = self.goal_alignment_cnt
+        self.goal_alignment_cnt += 1
+
         speaker = attendee_manager.get_speaker_map(meeting_id)
         # Get recent 1 minute dialog (approx 30 sentences maybe? or time based)
         # Using simple heuristic: last 20 sentences
         recent_sentences = self.sentences[-20:]
         recent_dialog = parse_sentences_to_dialog(recent_sentences, speaker)
+        
+        self.logger.info(f"[goal_check_context] cnt={current_cnt} dialog_len={len(recent_dialog)} dialog_preview={recent_dialog[:100]}")
 
         # Get current map context (core issues)
         # Just dumping the map might be too large.
@@ -741,8 +747,18 @@ class MeetingAgentGamma(MeetingAgent):
             self.parsed_issues_new.parsed_issue
         )  # Using full map for now as it's stringified
 
+        # Get currently focused issue
+        focused_issue = ""
+        if int(self.chosen_node) > 0:
+            try:
+                focused_issue = self.parsed_issues_new.parsed_issue[int(self.chosen_node) - 1].content
+            except IndexError:
+                self.logger.warning(f"Chosen node {self.chosen_node} not found in parsed issues.")
+
+        # Use timestamp to avoid reading stale cache from previous server runs
+        timestamp = int(time.time())
         cache_file = (
-            Path(self.cm.base_dir, f"goal_alignment/goal_{self.goal_alignment_cnt}.txt")
+            Path(self.cm.base_dir, f"goal_alignment/goal_{timestamp}_{current_cnt}.txt")
         ).resolve()
         cache_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -754,7 +770,8 @@ class MeetingAgentGamma(MeetingAgent):
                 current_goal=self.meeting_goal,
                 recent_dialog=recent_dialog,
                 current_map_context=current_map_context,
-                cnt=self.goal_alignment_cnt,
+                focused_issue=focused_issue,
+                cnt=current_cnt,
                 logger=self.logger,
                 file_suffix="",
             )
@@ -783,8 +800,6 @@ class MeetingAgentGamma(MeetingAgent):
                 self.logger.error(
                     f"[goal_check_error] Failed to decode JSON: {json_str}"
                 )
-
-            self.goal_alignment_cnt += 1
 
         except Exception as e:
             self.logger.error(f"[goal_check_error] {e}", exc_info=True)

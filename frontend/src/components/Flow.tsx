@@ -12,6 +12,7 @@ import {
   type OnNodeDrag,
   useNodesInitialized,
   useReactFlow,
+  Panel,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import '@xyflow/react/dist/base.css';
@@ -194,66 +195,7 @@ export default function Flow({ initialNodeData, isEditable }: { initialNodeData:
   const [running, setRunning] = useState(false);
 
   const meetingHashId = useMeetingStore(s => s.meetingHashId);
-  const driftScore = useMeetingStore(s => s.driftScore);
   
-  const getBackgroundColor = (score: number) => {
-      // 0-100, 0 is good, 100 is bad drift.
-      // Re-interpret score as "Correlation" might require inverting logic if backend sends "Drift Score".
-      // Assuming backend sends Drift Score (0=aligned, 100=drifted).
-      
-      if (score < 30) {
-          // High correlation / Low drift -> Normal / Slight Greenish? Or just White.
-          // Let's keep it clean white or very subtle cool color.
-          return undefined; 
-      }
-      
-      // 30-70: Medium drift -> Light Orange / Sepia
-      // 70-100: High drift -> Light Red
-      
-      // Using CSS filters might be better for "Ambient" effect on the whole container, 
-      // but ReactFlow style background color is effective too.
-      
-      const intensity = (score - 30) / 70; // 0 to 1
-      if (score > 70) {
-          return `rgba(255, 220, 220, ${0.2 + intensity * 0.3})`; // More visible red
-      }
-      return `rgba(255, 245, 230, ${0.2 + intensity * 0.3})`; // Subtle orange
-  };
-
-  // Add a background text or watermark for correlation/status
-  const BackgroundStatus = () => {
-      if (driftScore < 30) return null;
-      
-      // Relevance logic:
-      // High drift (Score > 70) -> Low relevance
-      // Medium drift (30-70) -> Medium relevance
-      // Low drift (< 30) -> High relevance (but usually hidden)
-      
-      let relevanceText = "";
-      if (driftScore > 70) {
-          relevanceText = "低";
-      } else {
-          relevanceText = "中";
-      }
-      // For driftScore < 30, it returns null above, so "High" is implicit/default state (no warning).
-      
-      return (
-          <div style={{
-              position: 'absolute',
-              bottom: '20px',
-              left: '20px',
-              fontSize: '48px',
-              fontWeight: 'bold',
-              color: driftScore > 70 ? 'rgba(255, 0, 0, 0.1)' : 'rgba(255, 165, 0, 0.1)',
-              pointerEvents: 'none',
-              zIndex: 0,
-              userSelect: 'none',
-          }}>
-              {t('Relevance' as any)}: {relevanceText}
-          </div>
-      );
-  };
-
   const onNodeDragStart: OnNodeDrag<CustomNodeType> = (event, node) => {
     setDraggingNode(node);
   };
@@ -324,8 +266,6 @@ export default function Flow({ initialNodeData, isEditable }: { initialNodeData:
       onNodeDragStop={isEditable ? onNodeDragStop : undefined} // 禁用拖动停止
       style={{
         height: '100%',
-        backgroundColor: getBackgroundColor(driftScore),
-        transition: 'background-color 1s ease',
       }}
       deleteKeyCode={isEditable ? 'Delete' : null} // 禁用删除
       nodeTypes={nodeTypes}
@@ -370,16 +310,17 @@ export default function Flow({ initialNodeData, isEditable }: { initialNodeData:
       <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
         {running && <Loader color="blue" size="sm" />}
       </div>
-      {isEditable && <Button
-        onClick={() => meetingsManualUpdate({ body: { meeting_hash_id: meetingHashId }})}
-        variant="light"
-        size="xs"
-        style={{ margin: '10px', zIndex: 1000 }}
-      >
-        {t('updateGraph')}
-      </Button>}
+      {isEditable && <Panel position="top-right">
+        <Button
+          onClick={() => meetingsManualUpdate({ body: { meeting_hash_id: meetingHashId }})}
+          variant="light"
+          size="xs"
+          style={{ zIndex: 1000 }}
+        >
+          {t('updateGraph')}
+        </Button>
+      </Panel>}
       <Background />
-      <BackgroundStatus />
     </ReactFlow>
   );
 };

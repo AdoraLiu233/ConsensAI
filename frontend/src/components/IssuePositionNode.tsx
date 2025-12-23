@@ -129,7 +129,7 @@ export function IssuePositionNode({ id, data, type }: NodeProps<CustomNodeType>)
       body: JSON.stringify({
         meeting_hash_id: meetingHashId,
         full_id: id,
-        status: status,
+        new_status: status,
       }),
     })
       .then(async (res) => {

@@ -10,9 +10,8 @@ type MeetingState = {
   hotwords: string[];
   type: 'graph' | 'document';
   meetingGoal: string;
-  driftScore: number;
-  driftReason: string;
-  driftIntervention: string;
+  driftRelevance: 'High' | 'Medium' | 'Low' | '';
+  driftHint: string;
 }
 
 type UiState = {
@@ -28,15 +27,14 @@ const initialState: MeetingState = {
   hotwords: [],
   type: 'graph',
   meetingGoal: '',
-  driftScore: 0,
-  driftReason: '',
-  driftIntervention: '',
+  driftRelevance: '',
+  driftHint: '',
 };
 
 type AllState = MeetingState & UiState & {
   setMeeting: (m: Partial<MeetingState>) => void;
   setMeetingGoal: (goal: string) => void;
-  setDriftInfo: (score: number, reason: string, intervention: string) => void;
+  setDriftInfo: (relevance: 'High' | 'Medium' | 'Low' | '', hint: string) => void;
   clearMeeting: () => void;
   hasMeeting: () => boolean;
 
@@ -59,7 +57,7 @@ export const useMeetingStore = create<AllState>()(
 
       setMeeting: (m) => set({ ...m }),
       setMeetingGoal: (goal) => set({ meetingGoal: goal }),
-      setDriftInfo: (score, reason, intervention) => set({ driftScore: score, driftReason: reason, driftIntervention: intervention }),
+      setDriftInfo: (relevance, hint) => set({ driftRelevance: relevance, driftHint: hint }),
       clearMeeting: () => set({ ...initialState }),
       hasMeeting: () => (get().meetingId !== ''),
 
